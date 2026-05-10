@@ -6,12 +6,18 @@ export type TravelAttraction = {
   description: string;
   sourceUrl: string;
   mapUrl: string;
+  naverUrl?: string;
+  googleUrl?: string;
+  kakaoUrl?: string;
+  reviewSourceUrls?: string[];
 };
 
 export type TravelStay = {
   name: string;
   area: string;
   notes: string;
+  airbnbUrl?: string;
+  sourceUrls?: string[];
 };
 
 export type TravelActivity = {
@@ -22,6 +28,7 @@ export type TravelActivity = {
 export type TravelDestinationContent = {
   fit?: string;
   sourceUrls?: string[];
+  blogEvidenceUrls?: string[];
   reviewThemes?: string[];
   attractions?: TravelAttraction[];
   stays?: TravelStay[];
@@ -76,7 +83,9 @@ export type TravelTransportOption = {
 export type TripPreference = {
   id: string;
   destination_id: string;
-  date_option_id: string;
+  date_option_id: string | null;
+  start_date: string | null;
+  end_date: string | null;
   transport_option_id: string;
   voter_name: string;
   like_count: number;
@@ -101,6 +110,7 @@ export type TripPlannerData = {
 };
 
 export type PreferenceFormState = {
-  dateOptionId: string;
+  startDate: string;
+  endDate: string;
   transportOptionId: string;
 };

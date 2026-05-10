@@ -13,7 +13,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import L from "leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchTripPlannerData,
   submitDestinationComment,
@@ -47,6 +48,8 @@ const viewLabels = {
 
 type ActiveView = keyof typeof viewLabels;
 
+const minTravelDate = "2026-06-01";
+const maxTravelDate = "2026-09-30";
 const voterTokenStorageKey = "summer-vacation-voter-token";
 
 const getVoterToken = () => {
@@ -89,16 +92,115 @@ const getReviewLinks = (destination: TravelDestination, attractionName: string) 
   ];
 };
 
-const getMapPosition = (destination: TravelDestination) => {
-  const minLatitude = 33.1;
-  const maxLatitude = 38.6;
-  const minLongitude = 124.4;
-  const maxLongitude = 131.2;
+const getAttractionReviewLinks = (
+  destination: TravelDestination,
+  attraction: { name: string; naverUrl?: string; googleUrl?: string; kakaoUrl?: string },
+) => {
+  return [
+    {
+      label: "네이버 리뷰",
+      url: attraction.naverUrl,
+    },
+    {
+      label: "구글 리뷰",
+      url: attraction.googleUrl,
+    },
+    {
+      label: "카카오 리뷰",
+      url: attraction.kakaoUrl,
+    },
+  ].map((reviewLink) => ({
+    ...reviewLink,
+    url:
+      reviewLink.url ??
+      getReviewLinks(destination, attraction.name).find(
+        (fallbackLink) => fallbackLink.label === reviewLink.label,
+      )?.url ??
+      "#",
+  }));
+};
 
-  return {
-    left: `${((destination.longitude - minLongitude) / (maxLongitude - minLongitude)) * 100}%`,
-    top: `${(1 - (destination.latitude - minLatitude) / (maxLatitude - minLatitude)) * 100}%`,
-  };
+type KoreaMapProps = {
+  destinations: TravelDestination[];
+  preferencesByDestinationId: Record<string, TripPreference[]>;
+  onSelectDestination: (destinationId: string) => void;
+};
+
+const KoreaMap = ({
+  destinations,
+  preferencesByDestinationId,
+  onSelectDestination,
+}: KoreaMapProps) => {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerLayerRef = useRef<L.LayerGroup | null>(null);
+
+  useEffect(() => {
+    if (mapContainerRef.current === null || mapRef.current !== null) {
+      return;
+    }
+
+    mapRef.current = L.map(mapContainerRef.current, {
+      center: [36.35, 127.95],
+      zoom: 7,
+      minZoom: 6,
+      maxZoom: 12,
+      scrollWheelZoom: false,
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(mapRef.current);
+
+    markerLayerRef.current = L.layerGroup().addTo(mapRef.current);
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+      markerLayerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mapRef.current === null || markerLayerRef.current === null) {
+      return;
+    }
+
+    markerLayerRef.current.clearLayers();
+
+    const bounds = L.latLngBounds([]);
+
+    destinations.forEach((destination) => {
+      const voteCount = preferencesByDestinationId[destination.id]?.length ?? 0;
+      const marker = L.marker([destination.latitude, destination.longitude], {
+        icon: L.divIcon({
+          className: "destination-map-icon",
+          html: `<span>${destination.marker_label}</span><strong>${voteCount}</strong>`,
+          iconAnchor: [24, 20],
+        }),
+      });
+
+      marker
+        .bindTooltip(destination.name, {
+          direction: "top",
+          offset: [0, -12],
+        })
+        .on("click", () => onSelectDestination(destination.id))
+        .addTo(markerLayerRef.current as L.LayerGroup);
+
+      bounds.extend([destination.latitude, destination.longitude]);
+    });
+
+    if (bounds.isValid()) {
+      mapRef.current.fitBounds(bounds, {
+        padding: [32, 32],
+        maxZoom: 7,
+      });
+    }
+  }, [destinations, onSelectDestination, preferencesByDestinationId]);
+
+  return <div className="korea-map" ref={mapContainerRef} />;
 };
 
 export const App = () => {
@@ -203,8 +305,8 @@ export const App = () => {
             const currentForm = currentForms[destination.id];
 
             forms[destination.id] = {
-              dateOptionId:
-                currentForm?.dateOptionId ?? nextPlannerData.dateOptions[0]?.id ?? "",
+              startDate: currentForm?.startDate ?? "2026-08-28",
+              endDate: currentForm?.endDate ?? "2026-08-30",
               transportOptionId:
                 currentForm?.transportOptionId ??
                 destinationTransportOptions[0]?.id ??
@@ -263,7 +365,8 @@ export const App = () => {
       ...currentForms,
       [destinationId]: {
         ...currentForms[destinationId],
-        dateOptionId: plannerData.dateOptions[0]?.id ?? "",
+        startDate: currentForms[destinationId]?.startDate ?? "2026-08-28",
+        endDate: currentForms[destinationId]?.endDate ?? "2026-08-30",
         transportOptionId:
           transportOptionsByDestinationId[destinationId]?.[0]?.id ?? "",
         [field]: value,
@@ -281,10 +384,37 @@ export const App = () => {
 
     if (
       form === undefined ||
-      form.dateOptionId.length === 0 ||
+      form.startDate.length === 0 ||
+      form.endDate.length === 0 ||
       form.transportOptionId.length === 0
     ) {
       setErrorMessage("날짜와 이동 방식을 선택하세요.");
+      return;
+    }
+
+    const startDate = new Date(`${form.startDate}T00:00:00`);
+    const endDate = new Date(`${form.endDate}T00:00:00`);
+    const nights = Math.round(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const includesWeekend = Array.from({ length: nights + 1 }).some((_, index) => {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + index);
+      return date.getDay() === 0 || date.getDay() === 6;
+    });
+
+    if (form.startDate < minTravelDate || form.endDate > maxTravelDate) {
+      setErrorMessage("여행 날짜는 2026년 6월 1일부터 9월 30일 사이여야 합니다.");
+      return;
+    }
+
+    if (![2, 3].includes(nights)) {
+      setErrorMessage("2박3일 또는 3박4일 일정만 저장할 수 있습니다.");
+      return;
+    }
+
+    if (!includesWeekend) {
+      setErrorMessage("주말이 포함된 날짜를 선택하세요.");
       return;
     }
 
@@ -295,7 +425,8 @@ export const App = () => {
     try {
       await submitTripPreference({
         destinationId,
-        dateOptionId: form.dateOptionId,
+        startDate: form.startDate,
+        endDate: form.endDate,
         transportOptionId: form.transportOptionId,
         voterName: trimmedVoterName,
         voterToken: getCurrentVoterToken(),
@@ -374,7 +505,8 @@ export const App = () => {
       preferencesByDestinationId[destination.id] ?? [];
     const destinationComments = commentsByDestinationId[destination.id] ?? [];
     const preferenceForm = preferenceForms[destination.id] ?? {
-      dateOptionId: plannerData.dateOptions[0]?.id ?? "",
+      startDate: "2026-08-28",
+      endDate: "2026-08-30",
       transportOptionId: destinationTransportOptions[0]?.id ?? "",
     };
 
@@ -382,11 +514,24 @@ export const App = () => {
       <div className="detail-grid">
         <section className="detail-main">
           {destination.main_image_url !== null ? (
-            <img
-              className="detail-image"
-              src={destination.main_image_url}
-              alt=""
-            />
+            <figure className="detail-media">
+              <img
+                className="detail-image"
+                src={destination.main_image_url}
+                alt=""
+              />
+              {destination.image_source_url !== null ? (
+                <a
+                  className="image-credit-link"
+                  href={destination.image_source_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  사진 출처 · {destination.image_credit ?? "source"}
+                  <ExternalLink size={13} aria-hidden="true" />
+                </a>
+              ) : null}
+            </figure>
           ) : null}
 
           <div className="detail-section">
@@ -463,16 +608,18 @@ export const App = () => {
                     </a>
                   </div>
                   <div className="review-source-row" aria-label="리뷰 출처">
-                    {getReviewLinks(destination, attraction.name).map((reviewLink) => (
-                      <a
-                        href={reviewLink.url}
-                        key={reviewLink.label}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {reviewLink.label}
-                      </a>
-                    ))}
+                    {getAttractionReviewLinks(destination, attraction).map(
+                      (reviewLink) => (
+                        <a
+                          href={reviewLink.url}
+                          key={reviewLink.label}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {reviewLink.label}
+                        </a>
+                      ),
+                    )}
                   </div>
                 </article>
               ))}
@@ -482,16 +629,43 @@ export const App = () => {
                 <p key={theme}>{theme}</p>
               ))}
             </div>
+            {(destination.content.blogEvidenceUrls ?? []).length > 0 ? (
+              <div className="evidence-link-box">
+                <strong>네이버 블로그 참고 글</strong>
+                <div className="link-row">
+                  {(destination.content.blogEvidenceUrls ?? []).map((url, index) => (
+                    <a href={url} key={url} target="_blank" rel="noreferrer">
+                      블로그 {index + 1}
+                      <ExternalLink size={13} aria-hidden="true" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <section className="detail-section">
-            <h3>7-8명 숙소 후보</h3>
+            <h3>7-8명 Airbnb 숙소 검색</h3>
             <div className="item-grid">
               {(destination.content.stays ?? []).map((stay) => (
                 <article className="mini-card" key={stay.name}>
                   <span>{stay.area}</span>
                   <strong>{stay.name}</strong>
                   <p>{stay.notes}</p>
+                  <div className="link-row">
+                    {stay.airbnbUrl !== undefined ? (
+                      <a href={stay.airbnbUrl} target="_blank" rel="noreferrer">
+                        Airbnb 8인 검색
+                        <ExternalLink size={13} aria-hidden="true" />
+                      </a>
+                    ) : null}
+                    {(stay.sourceUrls ?? []).map((url, index) => (
+                      <a href={url} key={url} target="_blank" rel="noreferrer">
+                        숙소 근거 {index + 1}
+                        <ExternalLink size={13} aria-hidden="true" />
+                      </a>
+                    ))}
+                  </div>
                 </article>
               ))}
             </div>
@@ -513,44 +687,70 @@ export const App = () => {
         <aside className="decision-panel">
           <section className="decision-box">
             <h3>내 선택 저장</h3>
-            <label>
-              <span>희망 날짜</span>
-              <select
-                value={preferenceForm.dateOptionId}
-                onChange={(event) =>
-                  handlePreferenceFieldChange(
-                    destination.id,
-                    "dateOptionId",
-                    event.target.value,
-                  )
-                }
-              >
-                {plannerData.dateOptions.map((dateOption) => (
-                  <option key={dateOption.id} value={dateOption.id}>
-                    {dateOption.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
+            <div className="calendar-range">
+              <label>
+                <span>출발일</span>
+                <input
+                  type="date"
+                  min={minTravelDate}
+                  max={maxTravelDate}
+                  value={preferenceForm.startDate}
+                  onChange={(event) =>
+                    handlePreferenceFieldChange(
+                      destination.id,
+                      "startDate",
+                      event.target.value,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <span>도착일</span>
+                <input
+                  type="date"
+                  min={minTravelDate}
+                  max={maxTravelDate}
+                  value={preferenceForm.endDate}
+                  onChange={(event) =>
+                    handlePreferenceFieldChange(
+                      destination.id,
+                      "endDate",
+                      event.target.value,
+                    )
+                  }
+                />
+              </label>
+            </div>
+            <p className="date-helper">6-9월 사이, 주말 포함 2박3일 또는 3박4일</p>
+            <div className="transport-picker" role="radiogroup" aria-label="이동 방식">
               <span>이동 방식</span>
-              <select
-                value={preferenceForm.transportOptionId}
-                onChange={(event) =>
-                  handlePreferenceFieldChange(
-                    destination.id,
-                    "transportOptionId",
-                    event.target.value,
-                  )
-                }
-              >
-                {destinationTransportOptions.map((transportOption) => (
-                  <option key={transportOption.id} value={transportOption.id}>
-                    {transportOption.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <div className="transport-segment">
+                {destinationTransportOptions.map((transportOption) => {
+                  const isSelected =
+                    preferenceForm.transportOptionId === transportOption.id;
+
+                  return (
+                    <button
+                      className={isSelected ? "active" : ""}
+                      key={transportOption.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() =>
+                        handlePreferenceFieldChange(
+                          destination.id,
+                          "transportOptionId",
+                          transportOption.id,
+                        )
+                      }
+                    >
+                      <strong>{transportOption.label}</strong>
+                      <span>{transportOption.estimated_time}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <button
               className="primary-button"
               type="button"
@@ -573,18 +773,19 @@ export const App = () => {
             ) : (
               <div className="preference-list">
                 {destinationPreferences.map((preference) => {
-                  const dateOption = plannerData.dateOptions.find(
-                    (option) => option.id === preference.date_option_id,
-                  );
                   const transportOption = plannerData.transportOptions.find(
                     (option) => option.id === preference.transport_option_id,
                   );
+                  const dateLabel =
+                    preference.start_date !== null && preference.end_date !== null
+                      ? `${preference.start_date} - ${preference.end_date}`
+                      : "날짜 미정";
 
                   return (
                     <article className="preference-item" key={preference.id}>
                       <div>
                         <strong>{preference.voter_name}</strong>
-                        <span>{dateOption?.label ?? "날짜 미정"}</span>
+                        <span>{dateLabel}</span>
                         <span>{transportOption?.label ?? "교통 미정"}</span>
                       </div>
                       <button
@@ -714,12 +915,25 @@ export const App = () => {
                 return (
                   <article className="destination-card" key={destination.id}>
                     {destination.main_image_url !== null ? (
-                      <img
-                        className="destination-image"
-                        src={destination.main_image_url}
-                        alt=""
-                        loading="lazy"
-                      />
+                      <div className="destination-media">
+                        <img
+                          className="destination-image"
+                          src={destination.main_image_url}
+                          alt=""
+                          loading="lazy"
+                        />
+                        {destination.image_source_url !== null ? (
+                          <a
+                            className="image-credit-link"
+                            href={destination.image_source_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {destination.image_credit ?? "source"}
+                            <ExternalLink size={13} aria-hidden="true" />
+                          </a>
+                        ) : null}
+                      </div>
                     ) : null}
                     <div className="destination-content">
                       <div className="destination-heading">
@@ -775,26 +989,11 @@ export const App = () => {
               </div>
               <span>배지는 선택 인원</span>
             </div>
-            <div className="korea-map">
-              <div className="korea-shape" aria-hidden="true" />
-              {plannerData.destinations.map((destination) => {
-                const destinationPreferences =
-                  preferencesByDestinationId[destination.id] ?? [];
-
-                return (
-                  <button
-                    className="map-marker"
-                    key={destination.id}
-                    style={getMapPosition(destination)}
-                    type="button"
-                    onClick={() => setSelectedDestinationId(destination.id)}
-                  >
-                    <span>{destination.marker_label}</span>
-                    <strong>{destinationPreferences.length}</strong>
-                  </button>
-                );
-              })}
-            </div>
+            <KoreaMap
+              destinations={plannerData.destinations}
+              preferencesByDestinationId={preferencesByDestinationId}
+              onSelectDestination={setSelectedDestinationId}
+            />
           </aside>
 
           {activeView === "vote" ? (
@@ -812,18 +1011,29 @@ export const App = () => {
               </div>
               <div className="dashboard-section">
                 <h2>날짜 선호</h2>
-                {plannerData.dateOptions.map((dateOption) => {
-                  const voteCount = plannerData.preferences.filter(
-                    (preference) => preference.date_option_id === dateOption.id,
-                  ).length;
+                {Object.entries(
+                  plannerData.preferences.reduce<Record<string, number>>(
+                    (dateCounts, preference) => {
+                      const dateLabel =
+                        preference.start_date !== null &&
+                        preference.end_date !== null
+                          ? `${preference.start_date} - ${preference.end_date}`
+                          : "날짜 미정";
 
-                  return (
-                    <div className="result-row" key={dateOption.id}>
-                      <span>{dateOption.label}</span>
+                      dateCounts[dateLabel] = (dateCounts[dateLabel] ?? 0) + 1;
+                      return dateCounts;
+                    },
+                    {},
+                  ),
+                ).map(([dateLabel, voteCount]) => (
+                    <div className="result-row" key={dateLabel}>
+                      <span>{dateLabel}</span>
                       <strong>{voteCount}명</strong>
                     </div>
-                  );
-                })}
+                  ))}
+                {plannerData.preferences.length === 0 ? (
+                  <p className="quiet-text">아직 저장된 날짜가 없습니다.</p>
+                ) : null}
               </div>
               <div className="dashboard-section">
                 <h2>이동 방식 선호</h2>

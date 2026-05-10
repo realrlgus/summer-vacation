@@ -18,6 +18,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  background:
+    linear-gradient(180deg, #f2efe6 0%, #f7f5ef 34%, #eef2ee 100%);
 }
 
 button,
@@ -75,7 +77,17 @@ h3 {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding: 8px 0 20px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(15, 52, 47, 0.16);
+  border-radius: 8px;
+  padding: 22px;
+  color: #f9fbf6;
+  background:
+    linear-gradient(135deg, rgba(16, 66, 59, 0.98), rgba(13, 87, 78, 0.92)),
+    url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Busan_City_Haeundae_Beach.jpg");
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 20px 44px rgba(33, 51, 43, 0.16);
 }
 
 .eyebrow,
@@ -87,10 +99,18 @@ h3 {
   text-transform: uppercase;
 }
 
+.top-bar .eyebrow {
+  color: #bddbd1;
+}
+
+.top-bar h1 {
+  color: #fff;
+}
+
 .top-description {
   max-width: 680px;
   margin-top: 8px;
-  color: #52645a;
+  color: #dce9e2;
   line-height: 1.55;
 }
 
@@ -112,8 +132,8 @@ h3 {
 .icon-button {
   flex: 0 0 auto;
   padding: 0 14px;
-  color: #133c35;
-  background: #dde9e3;
+  color: #173934;
+  background: #f2dfc9;
 }
 
 .primary-button {
@@ -154,9 +174,10 @@ h3 {
   align-items: end;
   margin-bottom: 14px;
   padding: 16px;
-  border: 1px solid #d7ded6;
+  border: 1px solid rgba(39, 61, 52, 0.1);
   border-radius: 8px;
   background: #fffdfa;
+  box-shadow: 0 12px 26px rgba(53, 67, 58, 0.08);
 }
 
 .name-field,
@@ -169,6 +190,7 @@ h3 {
 }
 
 .name-field input,
+.calendar-range input,
 .decision-box select,
 .decision-box textarea {
   width: 100%;
@@ -178,6 +200,18 @@ h3 {
   padding: 0 12px;
   color: #18211d;
   background: #fbfcfa;
+}
+
+.calendar-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.date-helper {
+  color: #8a4d2f;
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .decision-box textarea {
@@ -253,9 +287,16 @@ h3 {
 
 .destination-card {
   overflow: hidden;
-  border: 1px solid #d8ded6;
+  border: 1px solid rgba(35, 60, 50, 0.1);
   border-radius: 8px;
   background: #fffdfa;
+  box-shadow: 0 16px 32px rgba(49, 63, 55, 0.1);
+}
+
+.destination-media,
+.detail-media {
+  position: relative;
+  margin: 0;
 }
 
 .destination-image {
@@ -264,6 +305,27 @@ h3 {
   aspect-ratio: 16 / 8;
   object-fit: cover;
   background: #dfe7e2;
+}
+
+.image-credit-link {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  max-width: calc(100% - 20px);
+  min-height: 28px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 0 9px;
+  color: #fff;
+  background: rgba(16, 30, 26, 0.68);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .destination-content {
@@ -345,7 +407,7 @@ h3 {
 .dashboard-section,
 .decision-box,
 .detail-section {
-  border: 1px solid #d8ded6;
+  border: 1px solid rgba(35, 60, 50, 0.1);
   border-radius: 8px;
   background: #fffdfa;
 }
@@ -356,6 +418,7 @@ h3 {
   display: grid;
   gap: 14px;
   padding: 16px;
+  box-shadow: 0 18px 40px rgba(40, 60, 52, 0.12);
 }
 
 .map-header span {
@@ -365,45 +428,18 @@ h3 {
 }
 
 .korea-map {
-  position: relative;
   min-height: 560px;
   overflow: hidden;
   border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(216, 234, 235, 0.9), rgba(237, 244, 236, 0.7)),
-    #e7f0ef;
+  background: #e7f0ef;
 }
 
-.korea-shape {
-  position: absolute;
-  inset: 10% 22% 8% 24%;
-  border: 2px solid #8db3a3;
-  border-radius: 52% 42% 46% 58% / 38% 48% 58% 52%;
-  background:
-    radial-gradient(circle at 65% 20%, #cfe3ce 0 12%, transparent 13%),
-    radial-gradient(circle at 54% 60%, #c7dfc9 0 16%, transparent 17%),
-    #dcebd8;
-  transform: rotate(-11deg);
-}
-
-.korea-shape::after {
-  position: absolute;
-  right: 18%;
-  bottom: 17%;
-  width: 26%;
-  height: 21%;
-  border-radius: 50%;
-  background: #dcebd8;
-  content: "";
-}
-
-.map-marker {
-  position: absolute;
-  z-index: 1;
+.destination-map-icon {
   display: inline-flex;
+  width: auto !important;
+  height: auto !important;
   align-items: center;
   gap: 5px;
-  transform: translate(-50%, -50%);
   border: 2px solid #fff;
   border-radius: 999px;
   padding: 5px 6px 5px 9px;
@@ -412,9 +448,10 @@ h3 {
   box-shadow: 0 8px 18px rgba(28, 56, 48, 0.22);
   font-size: 0.78rem;
   font-weight: 900;
+  white-space: nowrap;
 }
 
-.map-marker strong {
+.destination-map-icon strong {
   display: inline-flex;
   min-width: 22px;
   height: 22px;
@@ -423,6 +460,10 @@ h3 {
   border-radius: 999px;
   color: #71321f;
   background: #ffd4bc;
+}
+
+.leaflet-container {
+  font: inherit;
 }
 
 .vote-dashboard {
@@ -493,6 +534,7 @@ h3 {
 }
 
 .detail-image {
+  display: block;
   width: 100%;
   max-height: 420px;
   border-radius: 8px;
@@ -624,6 +666,13 @@ h3 {
   font-weight: 900;
 }
 
+.evidence-link-box {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #edf0ec;
+  padding-top: 12px;
+}
+
 .activity-list p {
   display: grid;
   grid-template-columns: minmax(150px, 0.42fr) 1fr;
@@ -638,6 +687,47 @@ h3 {
 
 .decision-box {
   padding: 14px;
+}
+
+.transport-picker {
+  display: grid;
+  gap: 8px;
+  color: #475a51;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.transport-segment {
+  display: grid;
+  gap: 8px;
+}
+
+.transport-segment button {
+  display: grid;
+  gap: 4px;
+  min-height: 58px;
+  border: 1px solid #d6e0d9;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #33443c;
+  background: #fbfcfa;
+  text-align: left;
+}
+
+.transport-segment button span {
+  color: #66766e;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.transport-segment button.active {
+  border-color: #0d6b62;
+  color: #fff;
+  background: #0d6b62;
+}
+
+.transport-segment button.active span {
+  color: #d8efe7;
 }
 
 .preference-item {

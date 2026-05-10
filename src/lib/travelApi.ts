@@ -72,7 +72,8 @@ export const fetchTripPlannerData = async (): Promise<TripPlannerData> => {
 
 type SubmitTripPreferenceArgs = {
   destinationId: string;
-  dateOptionId: string;
+  startDate: string;
+  endDate: string;
   transportOptionId: string;
   voterName: string;
   voterToken: string;
@@ -80,15 +81,17 @@ type SubmitTripPreferenceArgs = {
 
 export const submitTripPreference = async ({
   destinationId,
-  dateOptionId,
+  startDate,
+  endDate,
   transportOptionId,
   voterName,
   voterToken,
 }: SubmitTripPreferenceArgs): Promise<TripPreference> => {
   const client = requireSupabase();
-  const { data, error } = await client.rpc("submit_trip_preference", {
+  const { data, error } = await client.rpc("submit_trip_preference_dates", {
     p_destination_id: destinationId,
-    p_date_option_id: dateOptionId,
+    p_start_date: startDate,
+    p_end_date: endDate,
     p_transport_option_id: transportOptionId,
     p_voter_name: voterName,
     p_voter_token: voterToken,
