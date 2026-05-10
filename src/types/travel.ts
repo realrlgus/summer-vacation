@@ -6,6 +6,8 @@ export type TravelAttraction = {
   description: string;
   sourceUrl: string;
   mapUrl: string;
+  imageUrl?: string;
+  imageSourceUrl?: string;
   naverUrl?: string;
   googleUrl?: string;
   kakaoUrl?: string;
@@ -23,6 +25,8 @@ export type TravelStay = {
 export type TravelActivity = {
   name: string;
   risk: string;
+  imageUrl?: string;
+  imageSourceUrl?: string;
 };
 
 export type TravelDestinationContent = {

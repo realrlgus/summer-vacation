@@ -120,6 +120,10 @@ const getAttractionReviewLinks = (
   }));
 };
 
+const getRepresentativeImage = (item: { imageUrl?: string }) => {
+  return item.imageUrl ?? null;
+};
+
 type KoreaMapProps = {
   destinations: TravelDestination[];
   preferencesByDestinationId: Record<string, TripPreference[]>;
@@ -596,6 +600,14 @@ export const App = () => {
             <div className="item-grid">
               {(destination.content.attractions ?? []).map((attraction) => (
                 <article className="mini-card" key={attraction.name}>
+                  {getRepresentativeImage(attraction) !== null ? (
+                    <img
+                      className="mini-card-image"
+                      src={getRepresentativeImage(attraction) ?? ""}
+                      alt=""
+                      loading="lazy"
+                    />
+                  ) : null}
                   <span>{attraction.kind}</span>
                   <strong>{attraction.name}</strong>
                   <p>{attraction.description}</p>
@@ -675,10 +687,20 @@ export const App = () => {
             <h3>핵심 액티비티</h3>
             <div className="activity-list">
               {(destination.content.activities ?? []).map((activity) => (
-                <p key={activity.name}>
-                  <strong>{activity.name}</strong>
-                  <span>{activity.risk}</span>
-                </p>
+                <article className="activity-card" key={activity.name}>
+                  {getRepresentativeImage(activity) !== null ? (
+                    <img
+                      className="activity-card-image"
+                      src={getRepresentativeImage(activity) ?? ""}
+                      alt=""
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <div>
+                    <strong>{activity.name}</strong>
+                    <span>{activity.risk}</span>
+                  </div>
+                </article>
               ))}
             </div>
           </section>

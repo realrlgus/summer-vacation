@@ -593,6 +593,16 @@ h3 {
   background: #fbfcfa;
 }
 
+.mini-card-image,
+.activity-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #dfe7e2;
+}
+
 .transport-card p,
 .mini-card p {
   color: #405148;
@@ -660,12 +670,6 @@ h3 {
   line-height: 1.5;
 }
 
-.review-list p::before {
-  content: "검증 필요 · ";
-  color: #c65f3d;
-  font-weight: 900;
-}
-
 .evidence-link-box {
   display: grid;
   gap: 8px;
@@ -673,12 +677,26 @@ h3 {
   padding-top: 12px;
 }
 
-.activity-list p {
+.activity-card {
   display: grid;
-  grid-template-columns: minmax(150px, 0.42fr) 1fr;
   gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid #edf0ec;
+  overflow: hidden;
+  border: 1px solid #e1e6df;
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.activity-card div {
+  display: grid;
+  gap: 5px;
+  padding: 0 12px 12px;
+}
+
+.activity-card span {
+  color: #64756c;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.45;
 }
 
 .decision-panel {
@@ -835,7 +853,4 @@ h3 {
     padding: 12px;
   }
 
-  .activity-list p {
-    grid-template-columns: 1fr;
-  }
 }
