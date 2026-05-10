@@ -831,6 +831,13 @@ h3 {
   line-height: 1.45;
 }
 
+.fallback-note {
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #8a4d2f !important;
+  background: #f7eadb;
+}
+
 .transport-picker {
   display: grid;
   gap: 8px;

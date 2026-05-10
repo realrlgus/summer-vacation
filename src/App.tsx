@@ -447,6 +447,17 @@ export const App = () => {
       return;
     }
 
+    const destination = plannerData.destinations.find(
+      (plannerDestination) => plannerDestination.id === destinationId,
+    );
+
+    if (destination?.isStaticFallback === true) {
+      setErrorMessage(
+        "이 후보는 화면에 먼저 추가된 상태입니다. Supabase 데이터 반영 후 투표 저장이 가능합니다.",
+      );
+      return;
+    }
+
     const startDate = new Date(`${form.startDate}T00:00:00`);
     const endDate = new Date(`${form.endDate}T00:00:00`);
     const nights = Math.round(
@@ -885,6 +896,9 @@ export const App = () => {
           {costEstimate !== undefined ? (
             <section className="decision-box trip-cost-summary">
               <h3>여행 경비</h3>
+              {destination.isStaticFallback === true ? (
+                <p className="fallback-note">DB 반영 전 임시 표시 후보</p>
+              ) : null}
               {(() => {
                 const total = getCostEstimateTotal(costEstimate);
                 const perPersonMin = roundUpToHundred(
@@ -914,6 +928,11 @@ export const App = () => {
 
           <section className="decision-box">
             <h3>내 선택 저장</h3>
+            {destination.isStaticFallback === true ? (
+              <p className="date-helper">
+                이 후보는 DB 반영 전이라 지금은 비교만 가능합니다.
+              </p>
+            ) : null}
             <div className="calendar-range">
               <label>
                 <span>출발일</span>

@@ -1,4 +1,8 @@
 import { supabase } from "./supabase";
+import {
+  activityFallbackDestinations,
+  activityFallbackTransportOptions,
+} from "../data/activityFallback";
 import type {
   DestinationComment,
   TravelDateOption,
@@ -14,6 +18,32 @@ const requireSupabase = () => {
   }
 
   return supabase;
+};
+
+const mergeActivityFallback = (
+  plannerData: TripPlannerData,
+): TripPlannerData => {
+  const destinationIds = new Set(
+    plannerData.destinations.map((destination) => destination.id),
+  );
+  const transportOptionIds = new Set(
+    plannerData.transportOptions.map((transportOption) => transportOption.id),
+  );
+  const missingDestinations = activityFallbackDestinations
+    .filter((destination) => !destinationIds.has(destination.id))
+    .map((destination) => ({ ...destination, isStaticFallback: true }));
+  const missingTransportOptions = activityFallbackTransportOptions.filter(
+    (transportOption) => !transportOptionIds.has(transportOption.id),
+  );
+
+  return {
+    ...plannerData,
+    destinations: [...plannerData.destinations, ...missingDestinations],
+    transportOptions: [
+      ...plannerData.transportOptions,
+      ...missingTransportOptions,
+    ],
+  };
 };
 
 export const fetchTripPlannerData = async (
@@ -66,14 +96,14 @@ export const fetchTripPlannerData = async (
     throw new Error(firstError.message);
   }
 
-  return {
+  return mergeActivityFallback({
     destinations: (destinationsResponse.data ?? []) as TravelDestination[],
     dateOptions: (dateOptionsResponse.data ?? []) as TravelDateOption[],
     transportOptions: (transportOptionsResponse.data ??
       []) as TravelTransportOption[],
     preferences: (preferencesResponse.data ?? []) as TripPreference[],
     comments: (commentsResponse.data ?? []) as DestinationComment[],
-  };
+  });
 };
 
 type SubmitTripPreferenceArgs = {

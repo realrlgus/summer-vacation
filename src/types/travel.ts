@@ -80,6 +80,7 @@ export type TravelDestination = {
   image_credit: string | null;
   tags: string[];
   content: TravelDestinationContent;
+  isStaticFallback?: boolean;
 };
 
 export type TravelDateOption = {
