@@ -118,7 +118,8 @@ h3 {
 .primary-button,
 .secondary-button,
 .close-button,
-.like-button {
+.like-button,
+.delete-button {
   display: inline-flex;
   min-height: 42px;
   align-items: center;
@@ -151,7 +152,8 @@ h3 {
 }
 
 .close-button,
-.like-button {
+.like-button,
+.delete-button {
   color: #273732;
   background: #edf1ec;
 }
@@ -165,6 +167,14 @@ h3 {
   padding: 0 10px;
   color: #a43e34;
   background: #fde9e6;
+}
+
+.delete-button {
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 9px;
+  color: #7c2d33;
+  background: #f7dddd;
 }
 
 .control-panel {
@@ -758,7 +768,7 @@ h3 {
   background: #f2f5f1;
 }
 
-.preference-item div {
+.preference-item div:not(.item-actions) {
   display: grid;
   gap: 4px;
 }
@@ -767,6 +777,17 @@ h3 {
   color: #52645a;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.item-actions,
+.comment-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.comment-heading {
+  justify-content: space-between;
 }
 
 .comment-item {

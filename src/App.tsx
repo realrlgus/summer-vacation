@@ -10,12 +10,15 @@ import {
   RefreshCw,
   Send,
   Train,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
 import L from "leaflet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  deleteDestinationComment,
+  deleteTripPreference,
   fetchTripPlannerData,
   submitDestinationComment,
   submitTripPreference,
@@ -50,19 +53,26 @@ type ActiveView = keyof typeof viewLabels;
 
 const minTravelDate = "2026-06-01";
 const maxTravelDate = "2026-09-30";
-const voterTokenStorageKey = "summer-vacation-voter-token";
+const voterTokenStorageKey = "summer-vacation-device-token";
+const voterNameStorageKey = "summer-vacation-voter-name";
 
 const getVoterToken = () => {
-  const currentVoterToken = window.localStorage.getItem(voterTokenStorageKey);
+  const currentVoterToken = window.sessionStorage.getItem(voterTokenStorageKey);
 
   if (currentVoterToken !== null) {
     return currentVoterToken;
   }
 
-  const nextVoterToken = window.crypto.randomUUID();
-  window.localStorage.setItem(voterTokenStorageKey, nextVoterToken);
+  const legacyVoterToken = window.localStorage.getItem("summer-vacation-voter-token");
+  const nextVoterToken = legacyVoterToken ?? window.crypto.randomUUID();
+  window.sessionStorage.setItem(voterTokenStorageKey, nextVoterToken);
+  window.localStorage.removeItem("summer-vacation-voter-token");
 
   return nextVoterToken;
+};
+
+const getStoredVoterName = () => {
+  return window.sessionStorage.getItem(voterNameStorageKey) ?? "";
 };
 
 const getTransportIcon = (mode: TravelTransportMode) => {
@@ -280,7 +290,7 @@ export const App = () => {
     );
   }, [plannerData.destinations, selectedDestinationId]);
 
-  const loadPlannerData = async () => {
+  const loadPlannerData = async (viewerToken = getCurrentVoterToken()) => {
     if (!isSupabaseConfigured) {
       setErrorMessage("Supabase 환경 변수가 설정되지 않았습니다.");
       setIsLoading(false);
@@ -291,7 +301,7 @@ export const App = () => {
     setErrorMessage(null);
 
     try {
-      const nextPlannerData = await fetchTripPlannerData();
+      const nextPlannerData = await fetchTripPlannerData(viewerToken);
 
       setPlannerData(nextPlannerData);
       setPreferenceForms((currentForms) => {
@@ -330,9 +340,15 @@ export const App = () => {
   };
 
   useEffect(() => {
-    setVoterToken(getVoterToken());
-    void loadPlannerData();
+    const nextVoterToken = getVoterToken();
+    setVoterToken(nextVoterToken);
+    setVoterName(getStoredVoterName());
+    void loadPlannerData(nextVoterToken);
   }, []);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(voterNameStorageKey, voterName);
+  }, [voterName]);
 
   const getCurrentVoterToken = () => {
     if (voterToken.length > 0) {
@@ -442,6 +458,33 @@ export const App = () => {
     }
   };
 
+  const handleDeletePreference = async (preferenceId: string) => {
+    setSubmittingKey(`delete-preference:${preferenceId}`);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const isDeleted = await deleteTripPreference(
+        preferenceId,
+        getCurrentVoterToken(),
+      );
+
+      if (!isDeleted) {
+        setErrorMessage("내가 저장한 선택만 지울 수 있습니다.");
+        return;
+      }
+
+      await loadPlannerData();
+      setSuccessMessage("선택이 삭제되었습니다.");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "선택 삭제에 실패했습니다.",
+      );
+    } finally {
+      setSubmittingKey(null);
+    }
+  };
+
   const handleLikePreference = async (preferenceId: string) => {
     setSubmittingKey(`like:${preferenceId}`);
     setErrorMessage(null);
@@ -492,6 +535,33 @@ export const App = () => {
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "댓글 저장에 실패했습니다.",
+      );
+    } finally {
+      setSubmittingKey(null);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    setSubmittingKey(`delete-comment:${commentId}`);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const isDeleted = await deleteDestinationComment(
+        commentId,
+        getCurrentVoterToken(),
+      );
+
+      if (!isDeleted) {
+        setErrorMessage("내가 쓴 댓글만 지울 수 있습니다.");
+        return;
+      }
+
+      await loadPlannerData();
+      setSuccessMessage("댓글이 삭제되었습니다.");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "댓글 삭제에 실패했습니다.",
       );
     } finally {
       setSubmittingKey(null);
@@ -806,15 +876,32 @@ export const App = () => {
                         <span>{dateLabel}</span>
                         <span>{transportOption?.label ?? "교통 미정"}</span>
                       </div>
-                      <button
-                        className="like-button"
-                        type="button"
-                        disabled={submittingKey === `like:${preference.id}`}
-                        onClick={() => void handleLikePreference(preference.id)}
-                      >
-                        <Heart size={15} aria-hidden="true" />
-                        {preference.like_count}
-                      </button>
+                      <div className="item-actions">
+                        <button
+                          className="like-button"
+                          type="button"
+                          disabled={submittingKey === `like:${preference.id}`}
+                          onClick={() => void handleLikePreference(preference.id)}
+                        >
+                          <Heart size={15} aria-hidden="true" />
+                          {preference.like_count}
+                        </button>
+                        {preference.is_owner === true ? (
+                          <button
+                            className="delete-button"
+                            type="button"
+                            aria-label="내 선택 삭제"
+                            disabled={
+                              submittingKey === `delete-preference:${preference.id}`
+                            }
+                            onClick={() =>
+                              void handleDeletePreference(preference.id)
+                            }
+                          >
+                            <Trash2 size={15} aria-hidden="true" />
+                          </button>
+                        ) : null}
+                      </div>
                     </article>
                   );
                 })}
@@ -847,7 +934,20 @@ export const App = () => {
             <div className="comment-list">
               {destinationComments.map((comment) => (
                 <article className="comment-item" key={comment.id}>
-                  <strong>{comment.commenter_name}</strong>
+                  <div className="comment-heading">
+                    <strong>{comment.commenter_name}</strong>
+                    {comment.is_owner === true ? (
+                      <button
+                        className="delete-button"
+                        type="button"
+                        aria-label="내 댓글 삭제"
+                        disabled={submittingKey === `delete-comment:${comment.id}`}
+                        onClick={() => void handleDeleteComment(comment.id)}
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                      </button>
+                    ) : null}
+                  </div>
                   <p>{comment.body}</p>
                 </article>
               ))}
@@ -869,7 +969,11 @@ export const App = () => {
             이동 방식을 모읍니다.
           </p>
         </div>
-        <button className="icon-button" type="button" onClick={loadPlannerData}>
+        <button
+          className="icon-button"
+          type="button"
+          onClick={() => void loadPlannerData()}
+        >
           <RefreshCw size={18} aria-hidden="true" />
           <span>새로고침</span>
         </button>

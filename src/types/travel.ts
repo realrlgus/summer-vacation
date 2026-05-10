@@ -93,6 +93,7 @@ export type TripPreference = {
   transport_option_id: string;
   voter_name: string;
   like_count: number;
+  is_owner?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -102,6 +103,7 @@ export type DestinationComment = {
   destination_id: string;
   commenter_name: string;
   body: string;
+  is_owner?: boolean;
   created_at: string;
 };
 

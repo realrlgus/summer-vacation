@@ -16,7 +16,9 @@ const requireSupabase = () => {
   return supabase;
 };
 
-export const fetchTripPlannerData = async (): Promise<TripPlannerData> => {
+export const fetchTripPlannerData = async (
+  viewerToken: string,
+): Promise<TripPlannerData> => {
   const client = requireSupabase();
 
   const [
@@ -45,8 +47,12 @@ export const fetchTripPlannerData = async (): Promise<TripPlannerData> => {
         "id, destination_id, mode, label, route_steps, estimated_time, estimated_cost, requires_car, station_rental_recommended, risk_note, sort_order",
       )
       .order("sort_order", { ascending: true }),
-    client.rpc("list_trip_preferences"),
-    client.rpc("list_destination_comments"),
+    client.rpc("list_trip_preferences_for_viewer", {
+      p_viewer_token: viewerToken,
+    }),
+    client.rpc("list_destination_comments_for_viewer", {
+      p_viewer_token: viewerToken,
+    }),
   ]);
 
   const firstError =
@@ -104,6 +110,23 @@ export const submitTripPreference = async ({
   return (data as TripPreference[])[0];
 };
 
+export const deleteTripPreference = async (
+  preferenceId: string,
+  voterToken: string,
+): Promise<boolean> => {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("delete_trip_preference", {
+    p_preference_id: preferenceId,
+    p_voter_token: voterToken,
+  });
+
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+
+  return Boolean(data);
+};
+
 export const toggleTripPreferenceLike = async (
   preferenceId: string,
   likerToken: string,
@@ -147,4 +170,21 @@ export const submitDestinationComment = async ({
   }
 
   return (data as DestinationComment[])[0];
+};
+
+export const deleteDestinationComment = async (
+  commentId: string,
+  commenterToken: string,
+): Promise<boolean> => {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("delete_destination_comment", {
+    p_comment_id: commentId,
+    p_commenter_token: commenterToken,
+  });
+
+  if (error !== null) {
+    throw new Error(error.message);
+  }
+
+  return Boolean(data);
 };
