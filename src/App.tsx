@@ -57,7 +57,7 @@ const voterTokenStorageKey = "summer-vacation-device-token";
 const voterNameStorageKey = "summer-vacation-voter-name";
 
 const getVoterToken = () => {
-  const currentVoterToken = window.sessionStorage.getItem(voterTokenStorageKey);
+  const currentVoterToken = window.localStorage.getItem(voterTokenStorageKey);
 
   if (currentVoterToken !== null) {
     return currentVoterToken;
@@ -65,14 +65,14 @@ const getVoterToken = () => {
 
   const legacyVoterToken = window.localStorage.getItem("summer-vacation-voter-token");
   const nextVoterToken = legacyVoterToken ?? window.crypto.randomUUID();
-  window.sessionStorage.setItem(voterTokenStorageKey, nextVoterToken);
+  window.localStorage.setItem(voterTokenStorageKey, nextVoterToken);
   window.localStorage.removeItem("summer-vacation-voter-token");
 
   return nextVoterToken;
 };
 
 const getStoredVoterName = () => {
-  return window.sessionStorage.getItem(voterNameStorageKey) ?? "";
+  return window.localStorage.getItem(voterNameStorageKey) ?? "";
 };
 
 const getTransportIcon = (mode: TravelTransportMode) => {
@@ -347,7 +347,7 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
-    window.sessionStorage.setItem(voterNameStorageKey, voterName);
+    window.localStorage.setItem(voterNameStorageKey, voterName);
   }, [voterName]);
 
   const getCurrentVoterToken = () => {
