@@ -18,9 +18,13 @@ import L from "leaflet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   deleteDestinationComment,
+  deleteScheduleComment,
   deleteTripPreference,
   fetchTripPlannerData,
+  getScheduleCommentBody,
+  isScheduleComment,
   submitDestinationComment,
+  submitScheduleComment,
   submitTripPreference,
   toggleTripPreferenceLike,
 } from "./lib/travelApi";
@@ -276,6 +280,7 @@ export const App = () => {
     Record<string, PreferenceFormState>
   >({});
   const [commentForms, setCommentForms] = useState<Record<string, string>>({});
+  const [scheduleCommentForm, setScheduleCommentForm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [submittingKey, setSubmittingKey] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -309,7 +314,9 @@ export const App = () => {
   }, [plannerData.preferences]);
 
   const commentsByDestinationId = useMemo(() => {
-    return plannerData.comments.reduce<Record<string, DestinationComment[]>>(
+    return plannerData.comments
+      .filter((comment) => !isScheduleComment(comment))
+      .reduce<Record<string, DestinationComment[]>>(
       (commentsByDestination, comment) => {
         commentsByDestination[comment.destination_id] = [
           ...(commentsByDestination[comment.destination_id] ?? []),
@@ -319,7 +326,11 @@ export const App = () => {
         return commentsByDestination;
       },
       {},
-    );
+      );
+  }, [plannerData.comments]);
+
+  const scheduleComments = useMemo(() => {
+    return plannerData.comments.filter(isScheduleComment);
   }, [plannerData.comments]);
 
   const sortedDestinations = useMemo(() => {
@@ -597,6 +608,68 @@ export const App = () => {
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "댓글 저장에 실패했습니다.",
+      );
+    } finally {
+      setSubmittingKey(null);
+    }
+  };
+
+  const handleSubmitScheduleComment = async () => {
+    const trimmedVoterName = requireVoterName();
+    const body = scheduleCommentForm.trim();
+
+    if (trimmedVoterName === null) {
+      return;
+    }
+
+    if (body.length === 0) {
+      setErrorMessage("일정 댓글 내용을 입력하세요.");
+      return;
+    }
+
+    setSubmittingKey("schedule-comment");
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      await submitScheduleComment({
+        commenterName: trimmedVoterName,
+        commenterToken: getCurrentVoterToken(),
+        body,
+      });
+      setScheduleCommentForm("");
+      await loadPlannerData();
+      setSuccessMessage("일정 댓글이 저장되었습니다.");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "일정 댓글 저장에 실패했습니다.",
+      );
+    } finally {
+      setSubmittingKey(null);
+    }
+  };
+
+  const handleDeleteScheduleComment = async (commentId: string) => {
+    setSubmittingKey(`delete-schedule-comment:${commentId}`);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const isDeleted = await deleteScheduleComment(
+        commentId,
+        getCurrentVoterToken(),
+      );
+
+      if (!isDeleted) {
+        setErrorMessage("내가 쓴 일정 댓글만 지울 수 있습니다.");
+        return;
+      }
+
+      await loadPlannerData();
+      setSuccessMessage("일정 댓글이 삭제되었습니다.");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "일정 댓글 삭제에 실패했습니다.",
       );
     } finally {
       setSubmittingKey(null);
@@ -1169,6 +1242,59 @@ export const App = () => {
               {successMessage}
             </p>
           ) : null}
+        </div>
+      </section>
+
+      <section className="schedule-comment-panel" aria-label="전체 일정 댓글">
+        <div className="schedule-comment-editor">
+          <div>
+            <p className="eyebrow">Schedule Talk</p>
+            <h2>전체 일정 조정</h2>
+          </div>
+          <textarea
+            value={scheduleCommentForm}
+            onChange={(event) => setScheduleCommentForm(event.target.value)}
+            maxLength={650}
+            placeholder="출발 시간, 숙소 기준, 예산, 일정 조정 의견"
+          />
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={submittingKey === "schedule-comment"}
+            onClick={() => void handleSubmitScheduleComment()}
+          >
+            <MessageCircle size={16} aria-hidden="true" />
+            <span>
+              {submittingKey === "schedule-comment" ? "저장 중" : "댓글 남기기"}
+            </span>
+          </button>
+        </div>
+        <div className="schedule-comment-list">
+          {scheduleComments.length === 0 ? (
+            <p className="quiet-text">아직 전체 일정 댓글이 없습니다.</p>
+          ) : (
+            scheduleComments.map((comment) => (
+              <article className="comment-item" key={comment.id}>
+                <div className="comment-heading">
+                  <strong>{comment.commenter_name}</strong>
+                  {comment.is_owner === true ? (
+                    <button
+                      className="delete-button"
+                      type="button"
+                      aria-label="내 일정 댓글 삭제"
+                      disabled={
+                        submittingKey === `delete-schedule-comment:${comment.id}`
+                      }
+                      onClick={() => void handleDeleteScheduleComment(comment.id)}
+                    >
+                      <Trash2 size={15} aria-hidden="true" />
+                    </button>
+                  ) : null}
+                </div>
+                <p>{getScheduleCommentBody(comment.body)}</p>
+              </article>
+            ))
+          )}
         </div>
       </section>
 

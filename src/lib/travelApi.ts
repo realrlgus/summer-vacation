@@ -21,6 +21,24 @@ const requireSupabase = () => {
   return supabase;
 };
 
+export const scheduleCommentMarker = "__GLOBAL_SCHEDULE__::";
+const scheduleCommentDestinationId = "busan-haeundae-gwangalli";
+
+export const isScheduleComment = (comment: DestinationComment) => {
+  return (
+    comment.destination_id === scheduleCommentDestinationId &&
+    comment.body.startsWith(scheduleCommentMarker)
+  );
+};
+
+export const getScheduleCommentBody = (body: string) => {
+  if (!body.startsWith(scheduleCommentMarker)) {
+    return body;
+  }
+
+  return body.slice(scheduleCommentMarker.length);
+};
+
 const mergeActivityFallback = (
   plannerData: TripPlannerData,
 ): TripPlannerData => {
@@ -239,3 +257,24 @@ export const deleteDestinationComment = async (
 
   return Boolean(data);
 };
+
+type SubmitScheduleCommentArgs = {
+  commenterName: string;
+  commenterToken: string;
+  body: string;
+};
+
+export const submitScheduleComment = async ({
+  commenterName,
+  commenterToken,
+  body,
+}: SubmitScheduleCommentArgs): Promise<DestinationComment> => {
+  return submitDestinationComment({
+    destinationId: scheduleCommentDestinationId,
+    commenterName,
+    commenterToken,
+    body: `${scheduleCommentMarker}${body}`,
+  });
+};
+
+export const deleteScheduleComment = deleteDestinationComment;

@@ -202,7 +202,8 @@ h3 {
 .name-field input,
 .calendar-range input,
 .decision-box select,
-.decision-box textarea {
+.decision-box textarea,
+.schedule-comment-editor textarea {
   width: 100%;
   min-height: 42px;
   border: 1px solid #ccd8d1;
@@ -224,7 +225,8 @@ h3 {
   font-weight: 800;
 }
 
-.decision-box textarea {
+.decision-box textarea,
+.schedule-comment-editor textarea {
   min-height: 96px;
   padding: 10px 12px;
   resize: vertical;
@@ -255,6 +257,32 @@ h3 {
 .status-message.success {
   color: #166152;
   background: #e1f4ed;
+}
+
+.schedule-comment-panel {
+  display: grid;
+  grid-template-columns: minmax(280px, 420px) 1fr;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 18px;
+  border: 1px solid rgba(39, 61, 52, 0.1);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fffdfa;
+  box-shadow: 0 12px 26px rgba(53, 67, 58, 0.08);
+}
+
+.schedule-comment-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.schedule-comment-list {
+  display: grid;
+  max-height: 270px;
+  gap: 10px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .view-tabs {
@@ -976,7 +1004,8 @@ h3 {
   }
 
   .top-bar,
-  .control-panel {
+  .control-panel,
+  .schedule-comment-panel {
     grid-template-columns: 1fr;
   }
 
