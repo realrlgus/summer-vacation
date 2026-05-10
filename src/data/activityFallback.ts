@@ -413,10 +413,9 @@ export const activityFallbackDestinations: TravelDestination[] = [
     recommended_months: "6월 말, 7월, 8월, 9월 초",
     recommended_duration: "2박3일 최적",
     main_image_url:
-      "https://commons.wikimedia.org/wiki/Special:Redirect/file/2016%EB%85%84%207%EC%9B%94%2030%EC%9D%BC%20See%26Sea%20DSC04009.jpg",
-    image_source_url:
-      "https://commons.wikimedia.org/wiki/File:2016%EB%85%84_7%EC%9B%94_30%EC%9D%BC_See%26Sea_DSC04009.jpg",
-    image_credit: "Wikimedia Commons",
+      "https://tong.visitkorea.or.kr/cms/resource/05/3534505_image2_1.jpg",
+    image_source_url: "https://ontrip.kr/travel-guides/details/2711035",
+    image_credit: "한국관광공사",
     tags: ["KTX가능", "동해", "항구", "스카이밸리", "2박3일"],
     content: {
       fit: "강릉보다 덜 붐비는 동해 항구 감성에 전망대, 벽화길, 회, 카페, 해변 확장을 같이 넣고 싶은 팀에 적합",
@@ -443,9 +442,8 @@ export const activityFallbackDestinations: TravelDestination[] = [
           mapUrl:
             "https://map.naver.com/p/search/%EB%8F%99%ED%95%B4%20%EB%8F%84%EC%A7%B8%EB%B9%84%EA%B3%A8%20%EC%8A%A4%EC%B9%B4%EC%9D%B4%EB%B0%B8%EB%A6%AC",
           imageUrl:
-            "https://commons.wikimedia.org/wiki/Special:Redirect/file/2016%EB%85%84%207%EC%9B%94%2030%EC%9D%BC%20See%26Sea%20DSC04009.jpg",
-          imageSourceUrl:
-            "https://commons.wikimedia.org/wiki/File:2016%EB%85%84_7%EC%9B%94_30%EC%9D%BC_See%26Sea_DSC04009.jpg",
+            "https://tong.visitkorea.or.kr/cms/resource/17/2742017_image2_1.jpg",
+          imageSourceUrl: "https://ontrip.kr/travel-guides/details/2711035",
         },
         {
           name: "논골담길",
@@ -455,9 +453,9 @@ export const activityFallbackDestinations: TravelDestination[] = [
           mapUrl:
             "https://map.kakao.com/?q=%EB%8F%99%ED%95%B4%20%EB%85%BC%EA%B3%A8%EB%8B%B4%EA%B8%B8",
           imageUrl:
-            "https://commons.wikimedia.org/wiki/Special:Redirect/file/2016%EB%85%84%207%EC%9B%94%2030%EC%9D%BC%20See%26Sea%20DSC04009.jpg",
+            "https://commons.wikimedia.org/wiki/Special:Redirect/file/2016%EB%85%84%207%EC%9B%94%2030%EC%9D%BC%20See%26Sea%20DSC04008.jpg",
           imageSourceUrl:
-            "https://commons.wikimedia.org/wiki/File:2016%EB%85%84_7%EC%9B%94_30%EC%9D%BC_See%26Sea_DSC04009.jpg",
+            "https://commons.wikimedia.org/wiki/File:2016%EB%85%84_7%EC%9B%94_30%EC%9D%BC_See%26Sea_DSC04008.jpg",
         },
         {
           name: "묵호등대/묵호항",
@@ -467,9 +465,8 @@ export const activityFallbackDestinations: TravelDestination[] = [
           mapUrl:
             "https://map.naver.com/p/search/%EB%AC%B5%ED%98%B8%EB%93%B1%EB%8C%80%20%EB%AC%B5%ED%98%B8%ED%95%AD",
           imageUrl:
-            "https://commons.wikimedia.org/wiki/Special:Redirect/file/2016%EB%85%84%207%EC%9B%94%2030%EC%9D%BC%20See%26Sea%20DSC04009.jpg",
-          imageSourceUrl:
-            "https://commons.wikimedia.org/wiki/File:2016%EB%85%84_7%EC%9B%94_30%EC%9D%BC_See%26Sea_DSC04009.jpg",
+            "https://tong.visitkorea.or.kr/cms/resource/55/3423355_image2_1.jpg",
+          imageSourceUrl: "https://ontrip.kr/travel-guides/details/129588",
         },
         {
           name: "어달/망상 해변",
@@ -478,6 +475,9 @@ export const activityFallbackDestinations: TravelDestination[] = [
           sourceUrl: "https://www.dh.go.kr/tour/index.do",
           mapUrl:
             "https://map.naver.com/p/search/%EB%8F%99%ED%95%B4%20%EC%96%B4%EB%8B%AC%ED%95%B4%EB%B3%80%20%EB%A7%9D%EC%83%81%ED%95%B4%EB%B3%80",
+          imageUrl:
+            "https://tong.visitkorea.or.kr/cms/resource/08/609108_image2_1.jpg",
+          imageSourceUrl: "https://ontrip.kr/travel-guides/details/125708",
         },
       ],
       stays: [
@@ -502,17 +502,22 @@ export const activityFallbackDestinations: TravelDestination[] = [
           name: "도째비골 스카이워크/슬라이드",
           risk: "강풍, 우천, 정기 휴무, 현장 대기 확인",
           imageUrl:
-            "https://commons.wikimedia.org/wiki/Special:Redirect/file/2016%EB%85%84%207%EC%9B%94%2030%EC%9D%BC%20See%26Sea%20DSC04009.jpg",
-          imageSourceUrl:
-            "https://commons.wikimedia.org/wiki/File:2016%EB%85%84_7%EC%9B%94_30%EC%9D%BC_See%26Sea_DSC04009.jpg",
+            "https://tong.visitkorea.or.kr/cms/resource/05/3534505_image2_1.jpg",
+          imageSourceUrl: "https://ontrip.kr/travel-guides/details/2711035",
         },
         {
           name: "묵호항 회/카페 투어",
           risk: "성수기 주차와 식당 대기 확인",
+          imageUrl:
+            "https://tong.visitkorea.or.kr/cms/resource/08/2678608_image2_1.jpg",
+          imageSourceUrl: "https://ontrip.kr/travel-guides/details/129588",
         },
         {
           name: "어달/망상 해변 물놀이",
           risk: "파도, 해파리, 샤워장 운영 확인",
+          imageUrl:
+            "https://tong.visitkorea.or.kr/cms/resource/15/609115_image2_1.jpg",
+          imageSourceUrl: "https://ontrip.kr/travel-guides/details/125708",
         },
       ],
       costEstimate: costEstimateFallbacks["mukho-donghae"],
