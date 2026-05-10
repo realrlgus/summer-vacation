@@ -2,7 +2,7 @@ alter table public.travel_votes
   add column if not exists voter_fingerprint text;
 
 update public.travel_votes
-set voter_fingerprint = encode(digest(voter_token, 'sha256'), 'hex')
+set voter_fingerprint = encode(extensions.digest(voter_token, 'sha256'), 'hex')
 where voter_fingerprint is null;
 
 alter table public.travel_votes
