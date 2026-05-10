@@ -574,19 +574,33 @@ h3 {
   font-weight: 700;
 }
 
-.link-row {
+.link-row,
+.review-source-row {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.link-row a {
+.link-row a,
+.review-source-row a {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   color: #0d6b62;
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.review-source-row {
+  gap: 6px;
+}
+
+.review-source-row a {
+  border-radius: 999px;
+  padding: 5px 7px;
+  color: #5f422f;
+  background: #f7eadb;
+  font-size: 0.76rem;
 }
 
 .review-list,

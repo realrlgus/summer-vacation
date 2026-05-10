@@ -70,6 +70,25 @@ const getTransportIcon = (mode: TravelTransportMode) => {
   return Train;
 };
 
+const getReviewLinks = (destination: TravelDestination, attractionName: string) => {
+  const query = encodeURIComponent(`${destination.region} ${attractionName}`);
+
+  return [
+    {
+      label: "네이버 리뷰",
+      url: `https://map.naver.com/p/search/${query}`,
+    },
+    {
+      label: "구글 리뷰",
+      url: `https://www.google.com/maps/search/?api=1&query=${query}`,
+    },
+    {
+      label: "카카오 리뷰",
+      url: `https://map.kakao.com/?q=${query}`,
+    },
+  ];
+};
+
 const getMapPosition = (destination: TravelDestination) => {
   const minLatitude = 33.1;
   const maxLatitude = 38.6;
@@ -410,6 +429,15 @@ export const App = () => {
                         <dt>비용</dt>
                         <dd>{transportOption.estimated_cost}</dd>
                       </div>
+                      {transportOption.requires_car ? (
+                        <div>
+                          <dt>렌트</dt>
+                          <dd>
+                            7-8인승 또는 차량 2대 기준 1일 약 12만-30만원대,
+                            성수기 실시간 견적 필요
+                          </dd>
+                        </div>
+                      ) : null}
                     </dl>
                     <p className="risk-note">{transportOption.risk_note}</p>
                   </article>
@@ -433,6 +461,18 @@ export const App = () => {
                     <a href={attraction.mapUrl} target="_blank" rel="noreferrer">
                       지도 <ExternalLink size={13} aria-hidden="true" />
                     </a>
+                  </div>
+                  <div className="review-source-row" aria-label="리뷰 출처">
+                    {getReviewLinks(destination, attraction.name).map((reviewLink) => (
+                      <a
+                        href={reviewLink.url}
+                        key={reviewLink.label}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {reviewLink.label}
+                      </a>
+                    ))}
                   </div>
                 </article>
               ))}
