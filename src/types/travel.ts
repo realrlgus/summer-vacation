@@ -29,6 +29,29 @@ export type TravelActivity = {
   imageSourceUrl?: string;
 };
 
+export type TravelCostLine = {
+  category: string;
+  label: string;
+  minAmount: number;
+  maxAmount: number;
+  note: string;
+  sourceUrl?: string;
+};
+
+export type TravelCostEstimate = {
+  baseDates: {
+    startDate: string;
+    endDate: string;
+    nights: number;
+    days: number;
+    people: number;
+    checkedAt: string;
+  };
+  lines: TravelCostLine[];
+  assumptions: string[];
+  sourceUrls: string[];
+};
+
 export type TravelDestinationContent = {
   fit?: string;
   sourceUrls?: string[];
@@ -37,6 +60,7 @@ export type TravelDestinationContent = {
   attractions?: TravelAttraction[];
   stays?: TravelStay[];
   activities?: TravelActivity[];
+  costEstimate?: TravelCostEstimate;
 };
 
 export type TravelDestination = {

@@ -28,6 +28,8 @@ import { isSupabaseConfigured } from "./lib/supabase";
 import type {
   DestinationComment,
   PreferenceFormState,
+  TravelCostEstimate,
+  TravelCostLine,
   TravelDateOption,
   TravelDestination,
   TravelTransportMode,
@@ -53,8 +55,11 @@ type ActiveView = keyof typeof viewLabels;
 
 const minTravelDate = "2026-06-01";
 const maxTravelDate = "2026-09-30";
+const defaultStartDate = "2026-06-26";
+const defaultEndDate = "2026-06-28";
 const voterTokenStorageKey = "summer-vacation-device-token";
 const voterNameStorageKey = "summer-vacation-voter-name";
+const wonFormatter = new Intl.NumberFormat("ko-KR");
 
 const getVoterToken = () => {
   const currentVoterToken = window.localStorage.getItem(voterTokenStorageKey);
@@ -81,6 +86,40 @@ const getTransportIcon = (mode: TravelTransportMode) => {
   }
 
   return Train;
+};
+
+const formatWonRange = (minAmount: number, maxAmount: number) => {
+  if (minAmount === maxAmount) {
+    return `${wonFormatter.format(minAmount)}원`;
+  }
+
+  return `${wonFormatter.format(minAmount)}-${wonFormatter.format(maxAmount)}원`;
+};
+
+const getCostEstimateTotal = (costEstimate: TravelCostEstimate) => {
+  return costEstimate.lines.reduce(
+    (total, line) => ({
+      minAmount: total.minAmount + line.minAmount,
+      maxAmount: total.maxAmount + line.maxAmount,
+    }),
+    { minAmount: 0, maxAmount: 0 },
+  );
+};
+
+const roundUpToHundred = (amount: number) => {
+  return Math.ceil(amount / 100) * 100;
+};
+
+const getCostLineIcon = (line: TravelCostLine) => {
+  if (line.category.includes("교통") || line.category.includes("KTX")) {
+    return Train;
+  }
+
+  if (line.category.includes("렌트") || line.category.includes("차량")) {
+    return Car;
+  }
+
+  return CalendarDays;
 };
 
 const getReviewLinks = (destination: TravelDestination, attractionName: string) => {
@@ -315,8 +354,8 @@ export const App = () => {
             const currentForm = currentForms[destination.id];
 
             forms[destination.id] = {
-              startDate: currentForm?.startDate ?? "2026-08-28",
-              endDate: currentForm?.endDate ?? "2026-08-30",
+              startDate: currentForm?.startDate ?? defaultStartDate,
+              endDate: currentForm?.endDate ?? defaultEndDate,
               transportOptionId:
                 currentForm?.transportOptionId ??
                 destinationTransportOptions[0]?.id ??
@@ -381,8 +420,8 @@ export const App = () => {
       ...currentForms,
       [destinationId]: {
         ...currentForms[destinationId],
-        startDate: currentForms[destinationId]?.startDate ?? "2026-08-28",
-        endDate: currentForms[destinationId]?.endDate ?? "2026-08-30",
+        startDate: currentForms[destinationId]?.startDate ?? defaultStartDate,
+        endDate: currentForms[destinationId]?.endDate ?? defaultEndDate,
         transportOptionId:
           transportOptionsByDestinationId[destinationId]?.[0]?.id ?? "",
         [field]: value,
@@ -575,10 +614,11 @@ export const App = () => {
       preferencesByDestinationId[destination.id] ?? [];
     const destinationComments = commentsByDestinationId[destination.id] ?? [];
     const preferenceForm = preferenceForms[destination.id] ?? {
-      startDate: "2026-08-28",
-      endDate: "2026-08-30",
+      startDate: defaultStartDate,
+      endDate: defaultEndDate,
       transportOptionId: destinationTransportOptions[0]?.id ?? "",
     };
+    const costEstimate = destination.content.costEstimate;
 
     return (
       <div className="detail-grid">
@@ -621,6 +661,75 @@ export const App = () => {
               </div>
             </div>
           </div>
+
+          {costEstimate !== undefined ? (
+            <section className="detail-section cost-section">
+              <div className="section-heading-row">
+                <div>
+                  <p className="eyebrow">
+                    {costEstimate.baseDates.startDate} -{" "}
+                    {costEstimate.baseDates.endDate}
+                  </p>
+                  <h3>6월 26-28일 예상 비용</h3>
+                </div>
+                <span>{costEstimate.baseDates.people}명 기준</span>
+              </div>
+              <div className="cost-summary-grid">
+                {(() => {
+                  const total = getCostEstimateTotal(costEstimate);
+
+                  return (
+                    <>
+                      <div>
+                        <span>총 예상</span>
+                        <strong>
+                          {formatWonRange(total.minAmount, total.maxAmount)}
+                        </strong>
+                      </div>
+                      <div>
+                        <span>1인 예상</span>
+                        <strong>
+                          {formatWonRange(
+                            roundUpToHundred(
+                              total.minAmount / costEstimate.baseDates.people,
+                            ),
+                            roundUpToHundred(
+                              total.maxAmount / costEstimate.baseDates.people,
+                            ),
+                          )}
+                        </strong>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="cost-line-list">
+                {costEstimate.lines.map((line) => {
+                  const CostIcon = getCostLineIcon(line);
+
+                  return (
+                    <article className="cost-line" key={`${line.category}-${line.label}`}>
+                      <CostIcon size={17} aria-hidden="true" />
+                      <div>
+                        <span>{line.category}</span>
+                        <strong>{line.label}</strong>
+                        <p>{line.note}</p>
+                      </div>
+                      <strong>{formatWonRange(line.minAmount, line.maxAmount)}</strong>
+                    </article>
+                  );
+                })}
+              </div>
+              <div className="link-row">
+                {costEstimate.sourceUrls.map((url, index) => (
+                  <a href={url} key={url} target="_blank" rel="noreferrer">
+                    비용 출처 {index + 1}
+                    <ExternalLink size={13} aria-hidden="true" />
+                  </a>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="detail-section">
             <h3>잠실 출발 교통안</h3>
@@ -773,6 +882,36 @@ export const App = () => {
         </section>
 
         <aside className="decision-panel">
+          {costEstimate !== undefined ? (
+            <section className="decision-box trip-cost-summary">
+              <h3>여행 경비</h3>
+              {(() => {
+                const total = getCostEstimateTotal(costEstimate);
+                const perPersonMin = roundUpToHundred(
+                  total.minAmount / costEstimate.baseDates.people,
+                );
+                const perPersonMax = roundUpToHundred(
+                  total.maxAmount / costEstimate.baseDates.people,
+                );
+
+                return (
+                  <>
+                    <div className="trip-cost-amount">
+                      <span>8인 기준</span>
+                      <strong>
+                        인당 {formatWonRange(perPersonMin, perPersonMax)}
+                      </strong>
+                    </div>
+                    <p>
+                      총 {formatWonRange(total.minAmount, total.maxAmount)} ·
+                      숙소, 장거리 이동, 렌트/현지 이동, 대표 액티비티 버퍼
+                    </p>
+                  </>
+                );
+              })()}
+            </section>
+          ) : null}
+
           <section className="decision-box">
             <h3>내 선택 저장</h3>
             <div className="calendar-range">
@@ -1025,7 +1164,80 @@ export const App = () => {
       ) : plannerData.destinations.length === 0 ? (
         <p className="empty-state">아직 여행 후보가 없습니다.</p>
       ) : (
-        <section className="planner-layout">
+        <section
+          className={`planner-layout ${
+            activeView === "vote" ? "vote-layout" : ""
+          }`}
+        >
+          {activeView === "vote" ? (
+            <section className="vote-dashboard" aria-label="전체 투표 현황">
+              <div className="dashboard-section">
+                <h2>목적지 순위</h2>
+                {sortedDestinations.map((destination) => (
+                  <div className="result-row" key={destination.id}>
+                    <span>{destination.name}</span>
+                    <strong>
+                      {preferencesByDestinationId[destination.id]?.length ?? 0}명
+                    </strong>
+                  </div>
+                ))}
+              </div>
+              <div className="dashboard-section">
+                <h2>날짜 선호</h2>
+                {Object.entries(
+                  plannerData.preferences.reduce<Record<string, number>>(
+                    (dateCounts, preference) => {
+                      const dateLabel =
+                        preference.start_date !== null &&
+                        preference.end_date !== null
+                          ? `${preference.start_date} - ${preference.end_date}`
+                          : "날짜 미정";
+
+                      dateCounts[dateLabel] = (dateCounts[dateLabel] ?? 0) + 1;
+                      return dateCounts;
+                    },
+                    {},
+                  ),
+                ).map(([dateLabel, voteCount]) => (
+                  <div className="result-row" key={dateLabel}>
+                    <span>{dateLabel}</span>
+                    <strong>{voteCount}명</strong>
+                  </div>
+                ))}
+                {plannerData.preferences.length === 0 ? (
+                  <p className="quiet-text">아직 저장된 날짜가 없습니다.</p>
+                ) : null}
+              </div>
+              <div className="dashboard-section">
+                <h2>이동 방식 선호</h2>
+                {["ktx_local", "car_only", "ktx_rental"].map((mode) => {
+                  const voteCount = plannerData.preferences.filter(
+                    (preference) =>
+                      plannerData.transportOptions.find(
+                        (transportOption) =>
+                          transportOption.id ===
+                            preference.transport_option_id &&
+                          transportOption.mode === mode,
+                      ) !== undefined,
+                  ).length;
+
+                  return (
+                    <div className="result-row" key={mode}>
+                      <span>
+                        {mode === "ktx_local"
+                          ? "KTX + 현지 이동"
+                          : mode === "car_only"
+                            ? "차량 직행"
+                            : "KTX + 역 렌터카"}
+                      </span>
+                      <strong>{voteCount}명</strong>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
           {(activeView === "ideas" || activeView === "vote") && (
             <section className="destination-list" aria-label="여행 후보 목록">
               {sortedDestinations.map((destination, index) => {
@@ -1117,75 +1329,6 @@ export const App = () => {
               onSelectDestination={setSelectedDestinationId}
             />
           </aside>
-
-          {activeView === "vote" ? (
-            <section className="vote-dashboard" aria-label="전체 투표 현황">
-              <div className="dashboard-section">
-                <h2>목적지 순위</h2>
-                {sortedDestinations.map((destination) => (
-                  <div className="result-row" key={destination.id}>
-                    <span>{destination.name}</span>
-                    <strong>
-                      {preferencesByDestinationId[destination.id]?.length ?? 0}명
-                    </strong>
-                  </div>
-                ))}
-              </div>
-              <div className="dashboard-section">
-                <h2>날짜 선호</h2>
-                {Object.entries(
-                  plannerData.preferences.reduce<Record<string, number>>(
-                    (dateCounts, preference) => {
-                      const dateLabel =
-                        preference.start_date !== null &&
-                        preference.end_date !== null
-                          ? `${preference.start_date} - ${preference.end_date}`
-                          : "날짜 미정";
-
-                      dateCounts[dateLabel] = (dateCounts[dateLabel] ?? 0) + 1;
-                      return dateCounts;
-                    },
-                    {},
-                  ),
-                ).map(([dateLabel, voteCount]) => (
-                    <div className="result-row" key={dateLabel}>
-                      <span>{dateLabel}</span>
-                      <strong>{voteCount}명</strong>
-                    </div>
-                  ))}
-                {plannerData.preferences.length === 0 ? (
-                  <p className="quiet-text">아직 저장된 날짜가 없습니다.</p>
-                ) : null}
-              </div>
-              <div className="dashboard-section">
-                <h2>이동 방식 선호</h2>
-                {["ktx_local", "car_only", "ktx_rental"].map((mode) => {
-                  const voteCount = plannerData.preferences.filter(
-                    (preference) =>
-                      plannerData.transportOptions.find(
-                        (transportOption) =>
-                          transportOption.id ===
-                            preference.transport_option_id &&
-                          transportOption.mode === mode,
-                      ) !== undefined,
-                  ).length;
-
-                  return (
-                    <div className="result-row" key={mode}>
-                      <span>
-                        {mode === "ktx_local"
-                          ? "KTX + 현지 이동"
-                          : mode === "car_only"
-                            ? "차량 직행"
-                            : "KTX + 역 렌터카"}
-                      </span>
-                      <strong>{voteCount}명</strong>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
         </section>
       )}
 

@@ -289,6 +289,10 @@ h3 {
   align-items: start;
 }
 
+.planner-layout.vote-layout {
+  grid-template-columns: minmax(0, 0.92fr) minmax(460px, 0.58fr);
+}
+
 .destination-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -444,6 +448,15 @@ h3 {
   background: #e7f0ef;
 }
 
+.vote-layout .map-panel {
+  position: relative;
+  top: auto;
+}
+
+.vote-layout .korea-map {
+  min-height: 460px;
+}
+
 .destination-map-icon {
   display: inline-flex;
   width: auto !important;
@@ -557,6 +570,23 @@ h3 {
   padding: 15px;
 }
 
+.section-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-heading-row > span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: #6b432f;
+  background: #f7eadb;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
 .detail-fit,
 .quiet-text {
   color: #53665c;
@@ -580,10 +610,68 @@ h3 {
 .meta-grid span,
 .mini-card span,
 .activity-list span,
-.transport-card dt {
+.transport-card dt,
+.cost-summary-grid span,
+.cost-line span,
+.trip-cost-amount span {
   color: #64756c;
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.cost-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cost-summary-grid div {
+  display: grid;
+  gap: 5px;
+  border-radius: 8px;
+  padding: 13px;
+  color: #0d3f39;
+  background: #e6f2ee;
+}
+
+.cost-summary-grid strong {
+  font-size: 1.08rem;
+}
+
+.cost-line-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cost-line {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  gap: 9px;
+  align-items: start;
+  border: 1px solid #e1e6df;
+  border-radius: 8px;
+  padding: 11px;
+  background: #fbfcfa;
+}
+
+.cost-line > svg {
+  color: #0d6b62;
+}
+
+.cost-line div {
+  display: grid;
+  gap: 4px;
+}
+
+.cost-line p {
+  color: #53665c;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.cost-line > strong {
+  color: #0d6b62;
+  white-space: nowrap;
 }
 
 .transport-list,
@@ -717,6 +805,32 @@ h3 {
   padding: 14px;
 }
 
+.trip-cost-summary {
+  border-color: rgba(13, 107, 98, 0.22);
+  background: #eef7f4;
+}
+
+.trip-cost-amount {
+  display: grid;
+  gap: 5px;
+  border-radius: 8px;
+  padding: 12px;
+  color: #0d3f39;
+  background: #d8eee7;
+}
+
+.trip-cost-amount strong {
+  font-size: 1.16rem;
+  line-height: 1.2;
+}
+
+.trip-cost-summary p {
+  color: #53665c;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .transport-picker {
   display: grid;
   gap: 8px;
@@ -844,8 +958,18 @@ h3 {
 
   .control-panel,
   .destination-list,
-  .meta-grid {
+  .meta-grid,
+  .cost-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .cost-line {
+    grid-template-columns: 24px 1fr;
+  }
+
+  .cost-line > strong {
+    grid-column: 2;
+    white-space: normal;
   }
 
   .view-tabs {
