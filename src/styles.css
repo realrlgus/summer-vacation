@@ -261,15 +261,31 @@ h3 {
 
 .schedule-comment-panel {
   display: grid;
-  grid-template-columns: minmax(280px, 420px) 1fr;
-  gap: 14px;
+  gap: 12px;
   align-items: start;
-  margin-bottom: 18px;
+  margin-top: 18px;
   border: 1px solid rgba(39, 61, 52, 0.1);
   border-radius: 8px;
   padding: 14px;
   background: #fffdfa;
   box-shadow: 0 12px 26px rgba(53, 67, 58, 0.08);
+}
+
+.schedule-comment-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schedule-comment-header > span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: #0d3f39;
+  background: #d8eee7;
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .schedule-comment-editor {
@@ -279,10 +295,16 @@ h3 {
 
 .schedule-comment-list {
   display: grid;
-  max-height: 270px;
   gap: 10px;
-  overflow: auto;
-  padding-right: 4px;
+}
+
+.comment-toggle-button {
+  min-height: 36px;
+  border: 1px solid #d6e0d9;
+  border-radius: 8px;
+  color: #0d6b62;
+  background: #f2f7f4;
+  font-weight: 900;
 }
 
 .view-tabs {
@@ -958,6 +980,20 @@ h3 {
 
 .comment-heading {
   justify-content: space-between;
+}
+
+.comment-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comment-meta time {
+  color: #7b8a82;
+  font-size: 0.76rem;
+  font-weight: 800;
 }
 
 .comment-item {

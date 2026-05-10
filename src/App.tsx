@@ -64,6 +64,13 @@ const defaultEndDate = "2026-06-28";
 const voterTokenStorageKey = "summer-vacation-device-token";
 const voterNameStorageKey = "summer-vacation-voter-name";
 const wonFormatter = new Intl.NumberFormat("ko-KR");
+const scheduleCommentPreviewCount = 3;
+const commentTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
+  month: "numeric",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 const getVoterToken = () => {
   const currentVoterToken = window.localStorage.getItem(voterTokenStorageKey);
@@ -124,6 +131,10 @@ const getPerPersonCostLabel = (costEstimate: TravelCostEstimate) => {
   );
 
   return formatWonRange(perPersonMin, perPersonMax);
+};
+
+const formatCommentTime = (createdAt: string) => {
+  return commentTimeFormatter.format(new Date(createdAt));
 };
 
 const getCostLineIcon = (line: TravelCostLine) => {
@@ -281,6 +292,8 @@ export const App = () => {
   >({});
   const [commentForms, setCommentForms] = useState<Record<string, string>>({});
   const [scheduleCommentForm, setScheduleCommentForm] = useState("");
+  const [isScheduleCommentsExpanded, setIsScheduleCommentsExpanded] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [submittingKey, setSubmittingKey] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -332,6 +345,17 @@ export const App = () => {
   const scheduleComments = useMemo(() => {
     return plannerData.comments.filter(isScheduleComment);
   }, [plannerData.comments]);
+
+  const visibleScheduleComments = useMemo(() => {
+    if (isScheduleCommentsExpanded) {
+      return scheduleComments;
+    }
+
+    return scheduleComments.slice(0, scheduleCommentPreviewCount);
+  }, [isScheduleCommentsExpanded, scheduleComments]);
+
+  const shouldShowScheduleCommentToggle =
+    scheduleComments.length > scheduleCommentPreviewCount;
 
   const sortedDestinations = useMemo(() => {
     return [...plannerData.destinations].sort((firstDestination, secondDestination) => {
@@ -1178,7 +1202,12 @@ export const App = () => {
               {destinationComments.map((comment) => (
                 <article className="comment-item" key={comment.id}>
                   <div className="comment-heading">
-                    <strong>{comment.commenter_name}</strong>
+                    <div className="comment-meta">
+                      <strong>{comment.commenter_name}</strong>
+                      <time dateTime={comment.created_at}>
+                        {formatCommentTime(comment.created_at)}
+                      </time>
+                    </div>
                     {comment.is_owner === true ? (
                       <button
                         className="delete-button"
@@ -1242,59 +1271,6 @@ export const App = () => {
               {successMessage}
             </p>
           ) : null}
-        </div>
-      </section>
-
-      <section className="schedule-comment-panel" aria-label="전체 일정 댓글">
-        <div className="schedule-comment-editor">
-          <div>
-            <p className="eyebrow">Schedule Talk</p>
-            <h2>전체 일정 조정</h2>
-          </div>
-          <textarea
-            value={scheduleCommentForm}
-            onChange={(event) => setScheduleCommentForm(event.target.value)}
-            maxLength={650}
-            placeholder="출발 시간, 숙소 기준, 예산, 일정 조정 의견"
-          />
-          <button
-            className="secondary-button"
-            type="button"
-            disabled={submittingKey === "schedule-comment"}
-            onClick={() => void handleSubmitScheduleComment()}
-          >
-            <MessageCircle size={16} aria-hidden="true" />
-            <span>
-              {submittingKey === "schedule-comment" ? "저장 중" : "댓글 남기기"}
-            </span>
-          </button>
-        </div>
-        <div className="schedule-comment-list">
-          {scheduleComments.length === 0 ? (
-            <p className="quiet-text">아직 전체 일정 댓글이 없습니다.</p>
-          ) : (
-            scheduleComments.map((comment) => (
-              <article className="comment-item" key={comment.id}>
-                <div className="comment-heading">
-                  <strong>{comment.commenter_name}</strong>
-                  {comment.is_owner === true ? (
-                    <button
-                      className="delete-button"
-                      type="button"
-                      aria-label="내 일정 댓글 삭제"
-                      disabled={
-                        submittingKey === `delete-schedule-comment:${comment.id}`
-                      }
-                      onClick={() => void handleDeleteScheduleComment(comment.id)}
-                    >
-                      <Trash2 size={15} aria-hidden="true" />
-                    </button>
-                  ) : null}
-                </div>
-                <p>{getScheduleCommentBody(comment.body)}</p>
-              </article>
-            ))
-          )}
         </div>
       </section>
 
@@ -1499,6 +1475,82 @@ export const App = () => {
           </aside>
         </section>
       )}
+
+      <section className="schedule-comment-panel" aria-label="전체 일정 댓글">
+        <div className="schedule-comment-header">
+          <div>
+            <p className="eyebrow">Schedule Talk</p>
+            <h2>전체 일정 조정</h2>
+          </div>
+          <span>{scheduleComments.length}개</span>
+        </div>
+        <div className="schedule-comment-list">
+          {scheduleComments.length === 0 ? (
+            <p className="quiet-text">아직 전체 일정 댓글이 없습니다.</p>
+          ) : (
+            visibleScheduleComments.map((comment) => (
+              <article className="comment-item" key={comment.id}>
+                <div className="comment-heading">
+                  <div className="comment-meta">
+                    <strong>{comment.commenter_name}</strong>
+                    <time dateTime={comment.created_at}>
+                      {formatCommentTime(comment.created_at)}
+                    </time>
+                  </div>
+                  {comment.is_owner === true ? (
+                    <button
+                      className="delete-button"
+                      type="button"
+                      aria-label="내 일정 댓글 삭제"
+                      disabled={
+                        submittingKey === `delete-schedule-comment:${comment.id}`
+                      }
+                      onClick={() => void handleDeleteScheduleComment(comment.id)}
+                    >
+                      <Trash2 size={15} aria-hidden="true" />
+                    </button>
+                  ) : null}
+                </div>
+                <p>{getScheduleCommentBody(comment.body)}</p>
+              </article>
+            ))
+          )}
+        </div>
+        {shouldShowScheduleCommentToggle ? (
+          <button
+            className="comment-toggle-button"
+            type="button"
+            onClick={() =>
+              setIsScheduleCommentsExpanded(
+                (currentIsExpanded) => !currentIsExpanded,
+              )
+            }
+          >
+            {isScheduleCommentsExpanded
+              ? "접기"
+              : `댓글 ${scheduleComments.length - scheduleCommentPreviewCount}개 더 보기`}
+          </button>
+        ) : null}
+        <div className="schedule-comment-editor">
+          <textarea
+            value={scheduleCommentForm}
+            onChange={(event) => setScheduleCommentForm(event.target.value)}
+            maxLength={650}
+            placeholder="출발 시간, 숙소 기준, 예산, 일정 조정 의견"
+          />
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={submittingKey === "schedule-comment"}
+            onClick={() => void handleSubmitScheduleComment()}
+          >
+            <MessageCircle size={16} aria-hidden="true" />
+            <span>
+              {submittingKey === "schedule-comment" ? "저장 중" : "댓글 남기기"}
+            </span>
+          </button>
+        </div>
+      </section>
 
       {selectedDestination !== null ? (
         <section
