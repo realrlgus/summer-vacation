@@ -1,4 +1,8 @@
-import type { TravelDestination, TravelTransportOption } from "../types/travel";
+import type {
+  TravelCostEstimate,
+  TravelDestination,
+  TravelTransportOption,
+} from "../types/travel";
 
 const costSourceUrls = [
   "https://www.letskorail.com/",
@@ -21,6 +25,348 @@ const costAssumptions = [
   "Airbnb와 쏘카는 실시간 재고/쿠폰/보험/청소비에 따라 최종 금액이 달라져 범위로 계산",
   "식비와 술값은 개인차가 커서 제외하고 숙소, 장거리 이동, 렌트/현지 이동, 대표 액티비티 버퍼만 포함",
 ];
+
+const createCostEstimate = (
+  lines: TravelCostEstimate["lines"],
+): TravelCostEstimate => ({
+  baseDates: baseCostDates,
+  lines,
+  assumptions: costAssumptions,
+  sourceUrls: costSourceUrls,
+});
+
+export const costEstimateFallbacks: Record<string, TravelCostEstimate> = {
+  "busan-haeundae-gwangalli": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 900000,
+      maxAmount: 1800000,
+      note: "해운대/광안리 8인 단체 숙소 2박. 청소비와 인원 추가요금 확인 필요.",
+    },
+    {
+      category: "교통",
+      label: "KTX/SRT 왕복",
+      minAmount: 960000,
+      maxAmount: 1250000,
+      note: "서울/수서-부산 8명 왕복 범위.",
+    },
+    {
+      category: "렌트/차량",
+      label: "현지 쏘카/택시 옵션",
+      minAmount: 0,
+      maxAmount: 500000,
+      note: "부산 시내는 대중교통 가능. 기장/송정 확장 시 추가.",
+    },
+    {
+      category: "현지 비용",
+      label: "현지 이동/주차",
+      minAmount: 180000,
+      maxAmount: 450000,
+      note: "지하철, 택시 분승, 야간 이동 버퍼.",
+    },
+  ]),
+  "gangneung-yangyang": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 700000,
+      maxAmount: 1500000,
+      note: "경포/강문/양양권 8인 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX 강릉 왕복",
+      minAmount: 360000,
+      maxAmount: 560000,
+      note: "서울-강릉 8명 왕복 예상 범위.",
+    },
+    {
+      category: "렌트/차량",
+      label: "현지 렌트/택시",
+      minAmount: 240000,
+      maxAmount: 650000,
+      note: "양양까지 묶으면 쏘카/렌터카 권장.",
+    },
+    {
+      category: "현지 비용",
+      label: "액티비티/이동 버퍼",
+      minAmount: 120000,
+      maxAmount: 360000,
+      note: "서핑 강습, 주차, 짧은 택시 이동 버퍼.",
+    },
+  ]),
+  "yeosu-night-sea": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 800000,
+      maxAmount: 1700000,
+      note: "종포/돌산/엑스포역 8인 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX 여수 왕복",
+      minAmount: 700000,
+      maxAmount: 1000000,
+      note: "용산-여수엑스포 8명 왕복 예상 범위.",
+    },
+    {
+      category: "렌트/차량",
+      label: "택시/렌터카",
+      minAmount: 300000,
+      maxAmount: 750000,
+      note: "돌산, 향일암 확장 시 차량 비용 증가.",
+    },
+    {
+      category: "현지 비용",
+      label: "케이블카/현지 이동",
+      minAmount: 180000,
+      maxAmount: 500000,
+      note: "케이블카, 택시 분승, 주차 버퍼.",
+    },
+  ]),
+  "taean-anmyeondo": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 650000,
+      maxAmount: 1450000,
+      note: "안면도/꽃지/만리포 8인 독채 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX 없음",
+      minAmount: 0,
+      maxAmount: 0,
+      note: "잠실 기준 차량 직행 또는 렌터카가 현실적인 후보.",
+    },
+    {
+      category: "렌트/차량",
+      label: "쏘카/렌터카 2대",
+      minAmount: 650000,
+      maxAmount: 1250000,
+      note: "2박3일 차량 2대, 보험, 유류, 통행료 포함 예상.",
+    },
+    {
+      category: "현지 비용",
+      label: "주차/액티비티",
+      minAmount: 200000,
+      maxAmount: 520000,
+      note: "루트 분산, 주차, 수목원/해변 이동 버퍼.",
+    },
+  ]),
+  "tongyeong-geoje": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 850000,
+      maxAmount: 1800000,
+      note: "통영/거제 오션뷰 또는 독채 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX/SRT + 환승",
+      minAmount: 800000,
+      maxAmount: 1200000,
+      note: "부산/동대구/진주권 이동 후 렌트 조합 예상.",
+    },
+    {
+      category: "렌트/차량",
+      label: "역 렌터카/쏘카",
+      minAmount: 550000,
+      maxAmount: 1100000,
+      note: "통영-거제 드라이브와 주차까지 고려한 차량 비용.",
+    },
+    {
+      category: "현지 비용",
+      label: "루지/케이블카/현지 이동",
+      minAmount: 220000,
+      maxAmount: 600000,
+      note: "루지, 케이블카, 택시/주차 버퍼.",
+    },
+  ]),
+  "namhae-coast": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 800000,
+      maxAmount: 1750000,
+      note: "남면/상주/삼동면 독채 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX/SRT + 환승",
+      minAmount: 680000,
+      maxAmount: 1050000,
+      note: "진주/여수/순천권 진입 후 차량 이동 조합 예상.",
+    },
+    {
+      category: "렌트/차량",
+      label: "렌터카 2대",
+      minAmount: 650000,
+      maxAmount: 1250000,
+      note: "남해 내부 이동은 차량 필수에 가까워 2대 기준.",
+    },
+    {
+      category: "현지 비용",
+      label: "주차/입장/이동 버퍼",
+      minAmount: 120000,
+      maxAmount: 350000,
+      note: "해안 드라이브, 주차, 짧은 입장료 버퍼.",
+    },
+  ]),
+  "pohang-guryongpo": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 700000,
+      maxAmount: 1500000,
+      note: "영일대/구룡포/호미곶 8인 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX 포항 왕복",
+      minAmount: 640000,
+      maxAmount: 920000,
+      note: "서울-포항 8명 왕복 예상 범위.",
+    },
+    {
+      category: "렌트/차량",
+      label: "현지 렌트/택시",
+      minAmount: 280000,
+      maxAmount: 750000,
+      note: "호미곶/구룡포 확장 시 차량 권장.",
+    },
+    {
+      category: "현지 비용",
+      label: "주차/현지 이동",
+      minAmount: 100000,
+      maxAmount: 300000,
+      note: "스페이스워크, 죽도시장, 해안 이동 버퍼.",
+    },
+  ]),
+  "ganghwa-seokmodo": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 600000,
+      maxAmount: 1300000,
+      note: "강화/석모도 8인 독채 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX 없음",
+      minAmount: 0,
+      maxAmount: 0,
+      note: "잠실 출발 차량 직행이 가장 단순한 후보.",
+    },
+    {
+      category: "렌트/차량",
+      label: "쏘카/렌터카 2대",
+      minAmount: 520000,
+      maxAmount: 1050000,
+      note: "2박3일 차량 2대, 보험, 유류, 통행료 포함 예상.",
+    },
+    {
+      category: "현지 비용",
+      label: "루지/온천/주차",
+      minAmount: 220000,
+      maxAmount: 570000,
+      note: "루지, 온천, 주차, 장보기 이동 버퍼.",
+    },
+  ]),
+  "boryeong-daecheon": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 650000,
+      maxAmount: 1450000,
+      note: "대천/무창포 8인 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "장항선/차량 이동",
+      minAmount: 480000,
+      maxAmount: 900000,
+      note: "대천역 열차 왕복 또는 차량 분승 예상 범위.",
+    },
+    {
+      category: "렌트/차량",
+      label: "현지 렌트/택시 옵션",
+      minAmount: 160000,
+      maxAmount: 520000,
+      note: "무창포 확장이나 장보기 동선에 따라 추가.",
+    },
+    {
+      category: "현지 비용",
+      label: "짚트랙/바이크/주차",
+      minAmount: 160000,
+      maxAmount: 420000,
+      note: "액티비티와 해변 주차 버퍼.",
+    },
+  ]),
+  "gunsan-seonyudo": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 700000,
+      maxAmount: 1600000,
+      note: "군산 시내/선유도/고군산군도 8인 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX 익산 왕복",
+      minAmount: 500000,
+      maxAmount: 760000,
+      note: "용산/수서-익산 8명 왕복 후 군산/선유도 이동.",
+    },
+    {
+      category: "렌트/차량",
+      label: "익산/군산 렌터카",
+      minAmount: 550000,
+      maxAmount: 1100000,
+      note: "선유도와 고군산군도 이동을 위한 차량 2대 예상.",
+    },
+    {
+      category: "현지 비용",
+      label: "주차/자전거/현지 이동",
+      minAmount: 120000,
+      maxAmount: 350000,
+      note: "섬 주차, 자전거, 군산 시내 이동 버퍼.",
+    },
+  ]),
+  "mokpo-sinan-jeungdo": createCostEstimate([
+    {
+      category: "숙소",
+      label: "Airbnb/단체 숙소 2박",
+      minAmount: 750000,
+      maxAmount: 1650000,
+      note: "목포/신안/증도 8인 숙소 2박.",
+    },
+    {
+      category: "교통",
+      label: "KTX/SRT 목포 왕복",
+      minAmount: 780000,
+      maxAmount: 1100000,
+      note: "용산/수서-목포 8명 왕복 예상 범위.",
+    },
+    {
+      category: "렌트/차량",
+      label: "택시/렌터카",
+      minAmount: 380000,
+      maxAmount: 900000,
+      note: "목포만 보면 택시 가능, 증도 확장 시 차량 권장.",
+    },
+    {
+      category: "현지 비용",
+      label: "케이블카/갯벌/현지 이동",
+      minAmount: 160000,
+      maxAmount: 460000,
+      note: "케이블카, 주차, 신안 이동 버퍼.",
+    },
+  ]),
+};
 
 export const activityFallbackDestinations: TravelDestination[] = [
   {

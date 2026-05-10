@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import {
   activityFallbackDestinations,
   activityFallbackTransportOptions,
+  costEstimateFallbacks,
 } from "../data/activityFallback";
 import type {
   DestinationComment,
@@ -35,10 +36,30 @@ const mergeActivityFallback = (
   const missingTransportOptions = activityFallbackTransportOptions.filter(
     (transportOption) => !transportOptionIds.has(transportOption.id),
   );
+  const destinationsWithFallbackCosts = plannerData.destinations.map(
+    (destination) => {
+      const costEstimate = costEstimateFallbacks[destination.id];
+
+      if (
+        destination.content.costEstimate !== undefined ||
+        costEstimate === undefined
+      ) {
+        return destination;
+      }
+
+      return {
+        ...destination,
+        content: {
+          ...destination.content,
+          costEstimate,
+        },
+      };
+    },
+  );
 
   return {
     ...plannerData,
-    destinations: [...plannerData.destinations, ...missingDestinations],
+    destinations: [...destinationsWithFallbackCosts, ...missingDestinations],
     transportOptions: [
       ...plannerData.transportOptions,
       ...missingTransportOptions,

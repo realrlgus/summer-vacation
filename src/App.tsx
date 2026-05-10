@@ -110,6 +110,18 @@ const roundUpToHundred = (amount: number) => {
   return Math.ceil(amount / 100) * 100;
 };
 
+const getPerPersonCostLabel = (costEstimate: TravelCostEstimate) => {
+  const total = getCostEstimateTotal(costEstimate);
+  const perPersonMin = roundUpToHundred(
+    total.minAmount / costEstimate.baseDates.people,
+  );
+  const perPersonMax = roundUpToHundred(
+    total.maxAmount / costEstimate.baseDates.people,
+  );
+
+  return formatWonRange(perPersonMin, perPersonMax);
+};
+
 const getCostLineIcon = (line: TravelCostLine) => {
   if (line.category.includes("교통") || line.category.includes("KTX")) {
     return Train;
@@ -1304,6 +1316,17 @@ export const App = () => {
                         {destination.region}
                       </p>
                       <p className="destination-summary">{destination.summary}</p>
+                      {destination.content.costEstimate !== undefined ? (
+                        <div className="card-cost-row">
+                          <span>예상 경비</span>
+                          <strong>
+                            인당{" "}
+                            {getPerPersonCostLabel(
+                              destination.content.costEstimate,
+                            )}
+                          </strong>
+                        </div>
+                      ) : null}
                       <div className="tag-row">
                         {destination.tags.map((tag) => (
                           <span key={tag}>{tag}</span>
