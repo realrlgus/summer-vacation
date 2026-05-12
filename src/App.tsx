@@ -19,13 +19,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   deleteDestinationComment,
   deleteScheduleComment,
+  deleteStaticFallbackTripPreference,
   deleteTripPreference,
   fetchTripPlannerData,
   getScheduleCommentBody,
   isScheduleComment,
   submitDestinationComment,
   submitScheduleComment,
+  submitStaticFallbackTripPreference,
   submitTripPreference,
+  toggleStaticFallbackTripPreferenceLike,
   toggleTripPreferenceLike,
 } from "./lib/travelApi";
 import { isSupabaseConfigured } from "./lib/supabase";
@@ -498,13 +501,6 @@ export const App = () => {
       (plannerDestination) => plannerDestination.id === destinationId,
     );
 
-    if (destination?.isStaticFallback === true) {
-      setErrorMessage(
-        "이 후보는 화면에 먼저 추가된 상태입니다. Supabase 데이터 반영 후 투표 저장이 가능합니다.",
-      );
-      return;
-    }
-
     const startDate = new Date(`${form.startDate}T00:00:00`);
     const endDate = new Date(`${form.endDate}T00:00:00`);
     const nights = Math.round(
@@ -536,14 +532,28 @@ export const App = () => {
     setSuccessMessage(null);
 
     try {
-      await submitTripPreference({
-        destinationId,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        transportOptionId: form.transportOptionId,
-        voterName: trimmedVoterName,
-        voterToken: getCurrentVoterToken(),
-      });
+      const currentVoterToken = getCurrentVoterToken();
+
+      if (destination?.isStaticFallback === true) {
+        submitStaticFallbackTripPreference({
+          destinationId,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          transportOptionId: form.transportOptionId,
+          voterName: trimmedVoterName,
+          voterToken: currentVoterToken,
+        });
+      } else {
+        await submitTripPreference({
+          destinationId,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          transportOptionId: form.transportOptionId,
+          voterName: trimmedVoterName,
+          voterToken: currentVoterToken,
+        });
+      }
+
       await loadPlannerData();
       setSuccessMessage("선택이 저장되었습니다.");
     } catch (error) {
@@ -561,10 +571,14 @@ export const App = () => {
     setSuccessMessage(null);
 
     try {
-      const isDeleted = await deleteTripPreference(
-        preferenceId,
-        getCurrentVoterToken(),
+      const preference = plannerData.preferences.find(
+        (plannerPreference) => plannerPreference.id === preferenceId,
       );
+      const currentVoterToken = getCurrentVoterToken();
+      const isDeleted =
+        preference?.isLocalFallback === true
+          ? deleteStaticFallbackTripPreference(preferenceId, currentVoterToken)
+          : await deleteTripPreference(preferenceId, currentVoterToken);
 
       if (!isDeleted) {
         setErrorMessage("내가 저장한 선택만 지울 수 있습니다.");
@@ -588,7 +602,17 @@ export const App = () => {
     setSuccessMessage(null);
 
     try {
-      await toggleTripPreferenceLike(preferenceId, getCurrentVoterToken());
+      const preference = plannerData.preferences.find(
+        (plannerPreference) => plannerPreference.id === preferenceId,
+      );
+      const currentVoterToken = getCurrentVoterToken();
+
+      if (preference?.isLocalFallback === true) {
+        toggleStaticFallbackTripPreferenceLike(preferenceId, currentVoterToken);
+      } else {
+        await toggleTripPreferenceLike(preferenceId, currentVoterToken);
+      }
+
       await loadPlannerData();
     } catch (error) {
       setErrorMessage(
@@ -1039,7 +1063,7 @@ export const App = () => {
             <h3>내 선택 저장</h3>
             {destination.isStaticFallback === true ? (
               <p className="date-helper">
-                이 후보는 DB 반영 전이라 지금은 비교만 가능합니다.
+                DB 반영 전이라 이 기기에 먼저 저장됩니다.
               </p>
             ) : null}
             <div className="calendar-range">

@@ -23,6 +23,91 @@ const requireSupabase = () => {
 
 export const scheduleCommentMarker = "__GLOBAL_SCHEDULE__::";
 const scheduleCommentDestinationId = "busan-haeundae-gwangalli";
+const staticFallbackPreferenceStorageKey =
+  "summer-vacation-static-fallback-preferences";
+
+type StaticFallbackPreference = {
+  id: string;
+  destination_id: string;
+  start_date: string;
+  end_date: string;
+  transport_option_id: string;
+  voter_name: string;
+  voter_token: string;
+  liker_tokens: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+const readStaticFallbackPreferences = (): StaticFallbackPreference[] => {
+  const rawPreferences = window.localStorage.getItem(
+    staticFallbackPreferenceStorageKey,
+  );
+
+  if (rawPreferences === null) {
+    return [];
+  }
+
+  try {
+    const parsedPreferences = JSON.parse(rawPreferences);
+
+    if (!Array.isArray(parsedPreferences)) {
+      return [];
+    }
+
+    return parsedPreferences.filter(
+      (preference): preference is StaticFallbackPreference =>
+        typeof preference?.id === "string" &&
+        typeof preference.destination_id === "string" &&
+        typeof preference.start_date === "string" &&
+        typeof preference.end_date === "string" &&
+        typeof preference.transport_option_id === "string" &&
+        typeof preference.voter_name === "string" &&
+        typeof preference.voter_token === "string" &&
+        Array.isArray(preference.liker_tokens) &&
+        typeof preference.created_at === "string" &&
+        typeof preference.updated_at === "string",
+    );
+  } catch {
+    return [];
+  }
+};
+
+const writeStaticFallbackPreferences = (
+  preferences: StaticFallbackPreference[],
+) => {
+  window.localStorage.setItem(
+    staticFallbackPreferenceStorageKey,
+    JSON.stringify(preferences),
+  );
+};
+
+const toTripPreference = (
+  preference: StaticFallbackPreference,
+  viewerToken: string,
+): TripPreference => ({
+  id: preference.id,
+  destination_id: preference.destination_id,
+  date_option_id: null,
+  start_date: preference.start_date,
+  end_date: preference.end_date,
+  transport_option_id: preference.transport_option_id,
+  voter_name: preference.voter_name,
+  like_count: preference.liker_tokens.length,
+  is_owner: preference.voter_token === viewerToken,
+  created_at: preference.created_at,
+  updated_at: preference.updated_at,
+  isLocalFallback: true,
+});
+
+const getStaticFallbackTripPreferences = (
+  viewerToken: string,
+  destinationIds: Set<string>,
+) => {
+  return readStaticFallbackPreferences()
+    .filter((preference) => destinationIds.has(preference.destination_id))
+    .map((preference) => toTripPreference(preference, viewerToken));
+};
 
 export const isScheduleComment = (comment: DestinationComment) => {
   return (
@@ -41,6 +126,7 @@ export const getScheduleCommentBody = (body: string) => {
 
 const mergeActivityFallback = (
   plannerData: TripPlannerData,
+  viewerToken: string,
 ): TripPlannerData => {
   const destinationIds = new Set(
     plannerData.destinations.map((destination) => destination.id),
@@ -51,6 +137,9 @@ const mergeActivityFallback = (
   const missingDestinations = activityFallbackDestinations
     .filter((destination) => !destinationIds.has(destination.id))
     .map((destination) => ({ ...destination, isStaticFallback: true }));
+  const missingDestinationIds = new Set(
+    missingDestinations.map((destination) => destination.id),
+  );
   const missingTransportOptions = activityFallbackTransportOptions.filter(
     (transportOption) => !transportOptionIds.has(transportOption.id),
   );
@@ -81,6 +170,10 @@ const mergeActivityFallback = (
     transportOptions: [
       ...plannerData.transportOptions,
       ...missingTransportOptions,
+    ],
+    preferences: [
+      ...plannerData.preferences,
+      ...getStaticFallbackTripPreferences(viewerToken, missingDestinationIds),
     ],
   };
 };
@@ -135,14 +228,17 @@ export const fetchTripPlannerData = async (
     throw new Error(firstError.message);
   }
 
-  return mergeActivityFallback({
-    destinations: (destinationsResponse.data ?? []) as TravelDestination[],
-    dateOptions: (dateOptionsResponse.data ?? []) as TravelDateOption[],
-    transportOptions: (transportOptionsResponse.data ??
-      []) as TravelTransportOption[],
-    preferences: (preferencesResponse.data ?? []) as TripPreference[],
-    comments: (commentsResponse.data ?? []) as DestinationComment[],
-  });
+  return mergeActivityFallback(
+    {
+      destinations: (destinationsResponse.data ?? []) as TravelDestination[],
+      dateOptions: (dateOptionsResponse.data ?? []) as TravelDateOption[],
+      transportOptions: (transportOptionsResponse.data ??
+        []) as TravelTransportOption[],
+      preferences: (preferencesResponse.data ?? []) as TripPreference[],
+      comments: (commentsResponse.data ?? []) as DestinationComment[],
+    },
+    viewerToken,
+  );
 };
 
 type SubmitTripPreferenceArgs = {
@@ -179,6 +275,44 @@ export const submitTripPreference = async ({
   return (data as TripPreference[])[0];
 };
 
+export const submitStaticFallbackTripPreference = ({
+  destinationId,
+  startDate,
+  endDate,
+  transportOptionId,
+  voterName,
+  voterToken,
+}: SubmitTripPreferenceArgs): TripPreference => {
+  const now = new Date().toISOString();
+  const currentPreferences = readStaticFallbackPreferences();
+  const existingPreference = currentPreferences.find(
+    (preference) =>
+      preference.destination_id === destinationId &&
+      preference.voter_token === voterToken,
+  );
+  const nextPreference: StaticFallbackPreference = {
+    id: existingPreference?.id ?? `fallback-${window.crypto.randomUUID()}`,
+    destination_id: destinationId,
+    start_date: startDate,
+    end_date: endDate,
+    transport_option_id: transportOptionId,
+    voter_name: voterName,
+    voter_token: voterToken,
+    liker_tokens: existingPreference?.liker_tokens ?? [],
+    created_at: existingPreference?.created_at ?? now,
+    updated_at: now,
+  };
+
+  writeStaticFallbackPreferences([
+    ...currentPreferences.filter(
+      (preference) => preference.id !== nextPreference.id,
+    ),
+    nextPreference,
+  ]);
+
+  return toTripPreference(nextPreference, voterToken);
+};
+
 export const deleteTripPreference = async (
   preferenceId: string,
   voterToken: string,
@@ -196,6 +330,21 @@ export const deleteTripPreference = async (
   return Boolean(data);
 };
 
+export const deleteStaticFallbackTripPreference = (
+  preferenceId: string,
+  voterToken: string,
+): boolean => {
+  const currentPreferences = readStaticFallbackPreferences();
+  const nextPreferences = currentPreferences.filter(
+    (preference) =>
+      preference.id !== preferenceId || preference.voter_token !== voterToken,
+  );
+
+  writeStaticFallbackPreferences(nextPreferences);
+
+  return nextPreferences.length !== currentPreferences.length;
+};
+
 export const toggleTripPreferenceLike = async (
   preferenceId: string,
   likerToken: string,
@@ -211,6 +360,34 @@ export const toggleTripPreferenceLike = async (
   }
 
   return Boolean(data);
+};
+
+export const toggleStaticFallbackTripPreferenceLike = (
+  preferenceId: string,
+  likerToken: string,
+): boolean => {
+  const currentPreferences = readStaticFallbackPreferences();
+  let didToggle = false;
+  const nextPreferences = currentPreferences.map((preference) => {
+    if (preference.id !== preferenceId) {
+      return preference;
+    }
+
+    didToggle = true;
+    const likerTokens = preference.liker_tokens.includes(likerToken)
+      ? preference.liker_tokens.filter((token) => token !== likerToken)
+      : [...preference.liker_tokens, likerToken];
+
+    return {
+      ...preference,
+      liker_tokens: likerTokens,
+      updated_at: new Date().toISOString(),
+    };
+  });
+
+  writeStaticFallbackPreferences(nextPreferences);
+
+  return didToggle;
 };
 
 type SubmitDestinationCommentArgs = {

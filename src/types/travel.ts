@@ -121,6 +121,7 @@ export type TripPreference = {
   is_owner?: boolean;
   created_at: string;
   updated_at: string;
+  isLocalFallback?: boolean;
 };
 
 export type DestinationComment = {
